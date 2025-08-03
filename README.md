@@ -1,24 +1,23 @@
 # Antback
 
-**Lightweight backtesting that just works.**
+**Small (ant-like) but useful backtesting.**
 
-A lightweight, low-level, event-loop-style backtest engine written in a function-driven imperative style. Antback follows a modular, imperative, loop-driven backtesting pattern using lightweight stateful helper functions and data containers rather than object-oriented strategy classes or full vectorization.
-
+A lightweight, low-level, event-loop-style backtest engine written in a function-driven imperative style.
 This paradigm balances simplicity with robustness, making it ideal for rapid strategy prototyping while avoiding common backtesting pitfalls like lookahead bias.
 
 ## Key Features
 
 - **Interactive HTML Reports**: Detailed reports with sorting and filtering capabilities via DataTables
 - **High Performance**: Optimized data structures (RollingArray, RollingList) for speed - very fast especially with talipp indicators
--  **Avoids Lookahead Bias**: Processes data point-by-point with wait functions to prevent future data leaks
-- **Transparency**: Every step is visible and debuggable
+-  **Avoids Lookahead Bias**: Processes data point-by-point (wait functions can be used to prevent future data leaks)
+- **Transparency**: Every step is visible and debuggable. No black-box logic.
 
 ## Installation
 
 Base functionality requires only `numpy` and `pandas`. For enhanced reporting, these lightweight packages can be installed:
 
 ```bash
-pip install numpy pandas
+#todo
 pip install df2tables  # For HTML reports - https://github.com/ts-kontakt/df2tables
 pip install xlreport   # For Excel reports - https://github.com/ts-kontakt/xlreport
 ```
@@ -47,17 +46,14 @@ for date, price in data['Close'].items():
     prices.append(price)
     price_history = prices.values()
     signal = None
-    
     if len(price_history) >= slow:
         fast_ma = np.mean(price_history[-fast:])
         slow_ma = np.mean(price_history[-slow:])
         direction = cross(fast_ma, slow_ma)
-        
         if direction == "up":
             signal = 'buy'
         elif direction == "down":
             signal = 'sell'
-    
     port.process(signal, symbol, date, price)
 
 # Generate reports
@@ -66,13 +62,11 @@ descr = f'Simple SMA Crossover on {symbol}'
 port.full_report('html', outfile=f'{descr}_report.html', title=descr)
 port.full_report('excel', outfile=f'{descr}_report.xlsx', title=descr)
 ```
-
 ![Report](https://github.com/ts-kontakt/antback/blob/main/antback-report.png?raw=true)
 
 > **Note**: In fact, the average lengths in this case are slightly optimized; see: [examples/07_optimization.py](https://github.com/ts-kontakt/antback/blob/main/examples/07_optimization.py). The results may be even better if trailing ATR stop is used ([examples/04_atr_stop.py](https://github.com/ts-kontakt/antback/blob/main/examples/04_atr_stop.py)) for the sell signal instead of the averages.
 
 ## Core Components
-
 ### Portfolio Class
 
 The main trading engine that handles position management, trade execution, and performance tracking:
@@ -96,7 +90,19 @@ port = ab.Portfolio(
 
 **Trading Patterns:**
 - **Simple strategies**: Use `port.process()` - handles everything automatically
-- **Complex strategies**: Use `port.buy()`, `port.sell()`, `port.update()` directly for full control (see rotation example)
+- **Complex strategies**: Use `port.buy()`, `port.sell()`, `port.update()` directly for full control
+  ```python
+      ...
+        if direction == "up":
+            port.buy( symbol, date, price)
+        elif direction == "down":
+            port.sell( symbol, date, price)
+    port.update(symbol, date, price)
+  ```
+   See [asset rotation example](examples/06_assets_rotation.py).
+  
+
+
 
 ### Optimized Data Structures
 
@@ -155,34 +161,23 @@ for date, price in data.items():
 [examples/11_simple_benchmark.py](https://github.com/ts-kontakt/antback/blob/main/examples/11_simple_benchmark.py) 
 
 ## Examples & Use Cases
-
-Explore advanced strategies and patterns in the [examples/](examples/) folder including ATR stops, asset rotation, and parameter optimization.
-
-## Design Philosophy
-
-### Event-Driven Architecture
-- **Point-by-point processing**: No lookahead bias
-- **Explicit state management**: Clear, debuggable logic  
-- **Functional approach**: Reusable helper functions over OOP complexity
+It's best to run the included [examples/](examples/) to fully understand how Antback operates.
 
 ### Multiple Position Support
 Currently supported with manual trade sizing via `fixed_val` parameter. See [asset rotation example](examples/06_assets_rotation.py).
 
-## Important Notes
+## Design Philosophy
+    Explicit > Implicit
+    State Isolation - Helper functions manage their own state
+    Bias Prevention - Strict chronological processing
+    Minimal Dependencies - Core requires only numpy/pandas
 
+## Important Notes
 - **No re-buying/re-selling**: Duplicate signals are ignored (set `warn=True` to see warnings)
-- **Single vs Multi-asset**: Use `single=True` for one ticker, `single=False` for rotation strategies
+- **Single vs Multi-asset**: Use `single=True` for one ticker
+-  Multi-position support exists — use fixed_val to control trade sizing.
 - **Minimum cash**: 10,000 minimum starting capital required
 - **Intraday support**: Available but not extensively tested
-
-## Reporting Features
-
-Generate comprehensive analysis with sortable, filterable tables:
-
-- **Trade-by-trade breakdown**: Entry/exit dates, P&L, duration
-- **Performance metrics**: Returns, drawdowns, Sharpe ratios
-- **Interactive filtering**: Sort and filter by any column
-- **Export options**: HTML (interactive) and Excel formats
 
 
 ## License
