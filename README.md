@@ -15,7 +15,7 @@ This paradigm balances simplicity with robustness, making it ideal for rapid str
 
 ## Installation
 
-Base functionality requires only `numpy` and `pandas`. For enhanced reporting, install these lightweight packages:
+Base functionality requires only `numpy` and `pandas`. For enhanced reporting, these lightweight packages can be installed:
 
 ```bash
 pip install numpy pandas
@@ -69,7 +69,7 @@ port.full_report('excel', outfile=f'{descr}_report.xlsx', title=descr)
 
 ![Report](https://github.com/ts-kontakt/antback/blob/main/antback-report.png?raw=true)
 
-> **Note**: In fact, the average lengths in this case are slightly optimized; see: [examples/07_optimization.py](https://github.com/ts-kontakt/antback/blob/main/examples/07_optimization.py). The results may be even better if we use the trailing ATR stop ([examples/04_atr_stop.py](https://github.com/ts-kontakt/antback/blob/main/examples/04_atr_stop.py)) for the sell signal instead of the averages.
+> **Note**: In fact, the average lengths in this case are slightly optimized; see: [examples/07_optimization.py](https://github.com/ts-kontakt/antback/blob/main/examples/07_optimization.py). The results may be even better if trailing ATR stop is used ([examples/04_atr_stop.py](https://github.com/ts-kontakt/antback/blob/main/examples/04_atr_stop.py)) for the sell signal instead of the averages.
 
 ## Core Components
 
@@ -92,8 +92,7 @@ port = ab.Portfolio(
 - `port.buy(symbol, date, price, fixed_val=None)` - Buy shares (for complex multi-ticker strategies)
 - `port.sell(symbol, date, price)` - Sell shares (for complex multi-ticker strategies)
 - `port.update(symbol, date, price)` - Update position prices (required when using buy/sell directly)
-- `port.basic_report()` - Quick performance summary
-- `port.full_report(format, outfile, title)` - Detailed HTML/Excel reports
+
 
 **Trading Patterns:**
 - **Simple strategies**: Use `port.process()` - handles everything automatically
@@ -136,7 +135,7 @@ for date, price in data.items():
 
 ### Performance & Technical Indicators
 
-Antback works exceptionally well with event-driven technical indicators. For optimal performance, consider using [talipp](https://github.com/femtotrader/talipp) indicators which are designed for streaming data:
+Antback works exceptionally well with event-driven technical indicators. For optimal performance, [talipp](https://github.com/femtotrader/talipp) indicators which are designed for streaming data may be used:
 
 ```python
 from talipp.indicators import SMA
@@ -151,7 +150,9 @@ for date, price in data.items():
         signal = determine_signal(fast_sma[-1], slow_sma[-1])
 ```
 
-See `examples/11_simple_benchmark.py` for performance comparisons between different indicator approaches.
+**Benchmark data**:
+
+[examples/11_simple_benchmark.py](https://github.com/ts-kontakt/antback/blob/main/examples/11_simple_benchmark.py) 
 
 ## Examples & Use Cases
 
@@ -163,11 +164,6 @@ Explore advanced strategies and patterns in the [examples/](examples/) folder in
 - **Point-by-point processing**: No lookahead bias
 - **Explicit state management**: Clear, debuggable logic  
 - **Functional approach**: Reusable helper functions over OOP complexity
-
-### Performance Optimizations
-- **Manual array shifting**: Avoids np.roll() overhead
-- **In-place operations**: Minimizes memory allocations
-- **Optimized indicators**: Works best with event-driven technical indicators
 
 ### Multiple Position Support
 Currently supported with manual trade sizing via `fixed_val` parameter. See [asset rotation example](examples/06_assets_rotation.py).
@@ -188,7 +184,7 @@ Generate comprehensive analysis with sortable, filterable tables:
 - **Interactive filtering**: Sort and filter by any column
 - **Export options**: HTML (interactive) and Excel formats
 
-\
+
 ## License
 
 MIT
