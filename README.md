@@ -70,9 +70,9 @@ port.full_report("html", outfile=f"{descr}_report.html", title=descr)
 ### Html report screenshot
 ![Report](https://github.com/ts-kontakt/antback/blob/main/antback-report.png?raw=true)
 
-### Filtering trades 
-![Filtering](https://github.com/ts-kontakt/antback/blob/main/filter_trades.gif?raw=true)
+### Interactive Filtering trades  
 
+<img src="https://github.com/ts-kontakt/antback/blob/main/filter_trades.gif?raw=true" alt="Sample Image" width="400" height="auto">
 
 ### Generate excel report
 ```
