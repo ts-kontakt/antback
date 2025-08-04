@@ -2,13 +2,14 @@
 
 **Small (ant-like) but useful backtesting.**
 
-A lightweight, low-level, event-loop-style backtest engine written in a function-driven imperative style.
+A lightweight,  event-loop-style backtest engine that allows  function-driven imperative style using lightweight stateful helper functions and data containers.
 
 ## Key Features
 - **Transparency**: Every step is visible and debuggable. No black-box logic.
 - **Balances simplicity with robustness** - ideal for rapid strategy prototyping
 - **Interactive HTML Reports**: Detailed reports with sorting and filtering capabilities via DataTables
 - **High Performance**: Optimized data structures for speed - very fast
+- **Easy to use with different data sources** - only needs `date` and `price` values
 -  **Avoids Lookahead Bias**: Processes data point-by-point (wait functions can be used to prevent future data leaks)
 
 
@@ -27,6 +28,7 @@ Core functionality requires only `numpy` and `pandas` (pandas for reporting only
 import antback as ab
 ab.demo()
 ```
+The demo feature generates random trades of several stocks at random prices and generates an interactive report. A profit is slightly more likely than a loss — it's a demo, after all.
 
 ## Quick Start
 
@@ -67,6 +69,10 @@ port.full_report("html", outfile=f"{descr}_report.html", title=descr)
 ```
 ### Html report screenshot
 ![Report](https://github.com/ts-kontakt/antback/blob/main/antback-report.png?raw=true)
+
+### Filtering trades 
+![Filtering](https://github.com/ts-kontakt/antback/blob/main/filter_trades.gif?raw=true)
+
 
 ### Generate excel report
 ```
@@ -119,6 +125,7 @@ See [asset rotation example](examples/06_assets_rotation.py).
 ## More Examples & Use Cases
 It's best to run the included [examples](examples/) to fully understand how Antback operates.
 
+## Useful functions
 ### Wait Functions - Preventing Lookahead Bias
 
 Example use of wait function.
@@ -169,7 +176,7 @@ recent_prices = prices.values()
 ```
 #### Multi-ticker strategies
 
-For more advanced multi-ticker strategies or those using machine learning, it's often necessary to track more than a few dozen rolling features. The ```NamedRollingArrays``` and ```PerTickerNamedRollingArrays``` functions are available for this purpose ([rolling demo](https://github.com/ts-kontakt/antback/blob/main/examples/13_rolling_demo.py)).
+For more advanced multi-ticker strategies or those using machine learning, it's often necessary to track more than a few dozen rolling features. The ```NamedRollingArrays``` and ```PerTickerNamedRollingArrays``` classes are available for this purpose ([rolling demo](https://github.com/ts-kontakt/antback/blob/main/examples/13_rolling_demo.py)).
 
 
 ### Performance & Technical Indicators
@@ -188,9 +195,10 @@ for date, price in data.items():
     if fast_sma[-1] and slow_sma[-1]:  # Check if indicators have valid data
         signal = determine_signal(fast_sma[-1], slow_sma[-1])
 ```
+### Performance
 
 **Benchmark data**:
-The backtest wasn't specifically designed for speed, but surprisingly, it turned out to be quite fast. Run the benchmark included with the examples (30-year SPY moving average crossover).
+Antback wasn't specifically designed for speed, but surprisingly, it turned out to be quite fast. Run the benchmark included with the examples (30-year SPY moving average crossover).
 
 [examples/11_simple_benchmark.py](https://github.com/ts-kontakt/antback/blob/main/examples/11_simple_benchmark.py) 
 
