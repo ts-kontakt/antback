@@ -15,7 +15,7 @@ A lightweight, event-loop-style backtest engine that allows a function-driven im
 
 ## Installation
 
-A key feature is the generation of interactive HTML reports, which allow for easy inspection of trades. The lightweight [df2table](https://github.com/ts-kontakt/df2tables) module is used for this purpose. For Excel reports, [xlreport](https://github.com/ts-kontakt/xlreport) is used.
+A key feature is the generation of interactive HTML reports, which allow for easy inspection of trades. The lightweight [df2tables](https://github.com/ts-kontakt/df2tables) module is used for this purpose. For Excel reports, [xlreport](https://github.com/ts-kontakt/xlreport) is used.
 
 
 ```bash
