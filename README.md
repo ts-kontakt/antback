@@ -1,21 +1,21 @@
 # Antback
 
-**Small (ant-like) but useful backtesting.**
+**Antback: Lightweight Backtesting with Heavyweight Insight.**
 
-A lightweight,  event-loop-style backtest engine that allows  function-driven imperative style using lightweight stateful helper functions and data containers.
+A lightweight, event-loop-style backtest engine that allows a function-driven imperative style using lightweight stateful helper functions and data containers.
 
 ## Key Features
 - **Transparency**: Every step is visible and debuggable. No black-box logic.
-- **Balances simplicity with robustness** - ideal for rapid strategy prototyping
-- **Interactive HTML Reports**: Detailed reports with sorting and filtering capabilities via DataTables
-- **High Performance**: Optimized data structures for speed - very fast
-- **Easy to use with different data sources** - only needs `date` and `price` values
--  **Avoids Lookahead Bias**: Processes data point-by-point (wait functions can be used to prevent future data leaks)
+- **Balances simplicity with robustness** - ideal for rapid strategy prototyping.
+- **Interactive HTML Reports**: Detailed reports with sorting and filtering capabilities via DataTables.
+- **High Performance**: Optimized data structures for speed - very fast.
+- **Easy to use with different data sources** - only needs `date` and `price` values.
+-  **Avoids Lookahead Bias**: Processes data point-by-point (wait functions can be used to prevent future data leaks).
 
 
 ## Installation
 
-A key feature, besides backtesting, is interactive HTML reports that allow for easy inspection of trades. The lightweight [df2table](https://github.com/ts-kontakt/df2tables) module is used for this purpose. For Excel reports, [xlreport](https://github.com/ts-kontakt/xlreport) is used.
+A key feature is the generation of interactive HTML reports, which allow for easy inspection of trades. The lightweight [df2table](https://github.com/ts-kontakt/df2tables) module is used for this purpose. For Excel reports, [xlreport](https://github.com/ts-kontakt/xlreport) is used.
 
 
 ```bash
@@ -28,7 +28,7 @@ Core functionality requires only `numpy` and `pandas` (pandas for reporting only
 import antback as ab
 ab.demo()
 ```
-The demo feature generates random trades of several stocks at random prices and generates an interactive report. A profit is slightly more likely than a loss — it's a demo, after all.
+The demo feature generates random trades of several stocks at random prices and generates an interactive report. A profit is slightly more likely than a loss—it's a demo, after all.
 
 ## Quick Start
 
@@ -117,7 +117,7 @@ port.update(symbol, date, price)
 See [asset rotation example](examples/06_assets_rotation.py).
 
 ### Important Notes
-- **No re-buying/re-selling**: Duplicate signals are ignored (set `warn=True` to see warnings)
+- **No re-buying or re-selling**: Duplicate signals are ignored (set `warn=True` to see warnings)
 - **Multi-position support** - Currently supported with manual trade sizing via `fixed_val` parameter. (set single=False)
 - **Intraday support**: Available but not extensively tested
 - **Long-only**: Currently, only long positions are possible.
@@ -128,10 +128,10 @@ It's best to run the included [examples](examples/) to fully understand how Antb
 ## Useful functions
 ### Wait Functions - Preventing Lookahead Bias
 
-Example use of wait function.
+Example use of a wait function.
 
 ```python
-sell_timer = ab.new_wait_n_bars(4) # wait 4 bars then sell
+sell_timer = ab.new_wait_n_bars(4) # wait 4 bars, then sell
 
 for date, price in data:
     signal = None
@@ -144,7 +144,7 @@ for date, price in data:
     port.process(signal, symbol, date, price)
 ```
 See examples [05_easter_effect_test.py](https://github.com/ts-kontakt/antback/blob/main/examples/05_easter_effect_test.py).
-There is also a per-ticker wait version that creates separate functions for each new_multi_ticker_wait symbol: 
+here is also a per-ticker wait version (new_multi_ticker_wait) that creates separate functions for each symbol.
 [wait demo](https://github.com/ts-kontakt/antback/blob/main/examples/12_wait_example.py)
 
 ### Cross Function
@@ -160,7 +160,7 @@ The returned function compares an **active** and **passive** series value at eac
 
 #### RollingArray
 Fast numpy-based rolling window  (Uses manual slice assignment ([:] = [...])	In-place operation; avoids temporary memory allocations. 
-can be 2x to 10x faster than np.roll):
+can be 2 to 10 times faster than np.roll.
 ```python
 prices = ab.RollingArray(window_size=50)
 prices.append(new_price)
@@ -181,7 +181,7 @@ For more advanced multi-ticker strategies or those using machine learning, it's 
 
 ### Performance & Technical Indicators
 
-Antback doesn't include its own indicators (except for the useful ATR stop line), but you can use any TA library. Antback is most suitable with event-driven technical indicators. For optimal performance, [talipp](https://github.com/femtotrader/talipp) indicators which are designed for streaming data may be used:
+Antback does not include its own indicators (except for a useful ATR stop line), but you can use any technical analysis (TA) library. Antback is most suitable with event-driven technical indicators. For optimal performance, [talipp](https://github.com/femtotrader/talipp) indicators, which is designed for streaming data may be used:
 
 ```python
 from talipp.indicators import SMA
@@ -198,7 +198,7 @@ for date, price in data.items():
 ### Performance
 
 **Benchmark data**:
-Antback wasn't specifically designed for speed, but surprisingly, it turned out to be quite fast. Run the benchmark included with the examples (30-year SPY moving average crossover).
+Although Antback was not specifically designed for speed, it is surprisingly fast. Run the benchmark included with the examples (30-year SPY moving average crossover).
 
 [examples/11_simple_benchmark.py](https://github.com/ts-kontakt/antback/blob/main/examples/11_simple_benchmark.py) 
 
