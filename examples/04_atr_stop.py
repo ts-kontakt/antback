@@ -7,20 +7,17 @@ def test_atr_strategy(data, symbol, fast=10, slow=30, atr_period=14, atr_mult=3)
     port = ab.Portfolio(10_000, single=True)
     prices = ab.RollingList(50)  # Stores enough prices for MA calculations
     cross = ab.new_cross_func()
-    atr_stop = ab.new_atr_stop_function(n=atr_period, atr_multiplier=atr_mult)
+    atr_stop = ab.new_atr_stop_func(n=atr_period, atr_multiplier=atr_mult)
 
     for row in data.to_records():
         date, _, high, low, close = list(row)[:5]  # Unpack OHLC data
         
-        # Update price history
         prices.append(close)
         price_hist = prices.values()
-        
         # Calculate ATR stop levels
         stop_state, stop_level = atr_stop(high, low, close)
         
         signal = None
-        
         if len(price_hist) >= 50:
             # Calculate MAs
             fast_ma = np.mean(price_hist[-fast:])
@@ -36,8 +33,7 @@ def test_atr_strategy(data, symbol, fast=10, slow=30, atr_period=14, atr_mult=3)
             # Sell when price hits ATR stop
             if stop_state == 'below':
                 signal = 'sell'
-                
-        # Execute trade
+            
         port.process(signal, symbol, date, close)
     
     # Generate reports

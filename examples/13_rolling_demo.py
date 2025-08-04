@@ -2,7 +2,7 @@
 """
 rolling_demo.py
 A *visual* tour of RollingArray, NamedRollingArrays and
-PerTickerMultiRollingArrays – watch the buffers shift!
+PerTickerNamedRollingArrays – watch the buffers shift!
 """
 
 import numpy as np

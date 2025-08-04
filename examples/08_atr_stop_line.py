@@ -129,7 +129,7 @@ def main():
     # -- Configuration --
     # Create an ATR (Average True Range) stop function with a period of 8 and a multiplier of 4.
     # This function will maintain its state between calls.
-    atr_stop_calculator = ab.new_atr_stop_function(n=8, atr_multiplier=4)
+    atr_stop_calculator = ab.new_atr_stop_func(n=8, atr_multiplier=4)
     
     # Define the stock symbol and data period.
     ticker_symbol = "QQQ"
