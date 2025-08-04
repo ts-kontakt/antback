@@ -37,8 +37,8 @@ data = yf.Ticker(symbol).history(period='10y')
 port = ab.Portfolio(10_000, single=True)
 fast, slow  = 10, 30
 prices = ab.RollingList(maxlen=slow)  # Stores enough prices for slow MA calculation
-
 cross = ab.new_cross_func()
+
 for date, price in data['Close'].items():
     prices.append(price)
     price_history = prices.values()
@@ -150,12 +150,14 @@ prices = ab.RollingList(maxlen=30)
 prices.append(price_data)
 recent_prices = prices.values()
 ```
+#### Multi-ticker strategies
+
 For more advanced multi-ticker strategies or those using machine learning, it's often necessary to track more than a few dozen rolling features. The ```NamedRollingArrays``` and ```PerTickerNamedRollingArrays``` functions are available for this purpose ([rolling demo](https://github.com/ts-kontakt/antback/blob/main/examples/13_rolling_demo.py)).
 
 
 ### Performance & Technical Indicators
 
-Antback is most suitable with event-driven technical indicators. For optimal performance, [talipp](https://github.com/femtotrader/talipp) indicators which are designed for streaming data may be used:
+Antback doesn't include its own indicators (except for the useful ATR stop line), but you can use any TA library. Antback is most suitable with event-driven technical indicators. For optimal performance, [talipp](https://github.com/femtotrader/talipp) indicators which are designed for streaming data may be used:
 
 ```python
 from talipp.indicators import SMA
@@ -177,9 +179,7 @@ The backtest wasn't specifically designed for speed, but surprisingly, it turned
 
 
 ## License
-
-MIT
-
+MIT.
 ---
 
 *Perfect for teaching, prototyping, and production backtesting. Excellent clarity and control per bar.*
