@@ -36,32 +36,36 @@ data = yf.Ticker(symbol).history(period='10y')
 
 port = ab.Portfolio(10_000, single=True)
 fast, slow  = 10, 30
-prices = ab.RollingList(maxlen=slow)  # Stores enough prices for slow MA calculation
+
+prices = ab.RollingList(maxlen=slow)
 cross = ab.new_cross_func()
 
-for date, price in data['Close'].items():
+for date, price in data["Close"].items():
     prices.append(price)
     price_history = prices.values()
-    signal = None  # Reset signal 
+    signal = None  # Reset signal
+    
     if len(price_history) >= slow:
         fast_ma, slow_ma = np.mean(price_history[-fast:]), np.mean(price_history[-slow:])
-        direction = cross(fast_ma, slow_ma)
+        direction = cross(fast_ma, slow_ma)  # active crosses  passive
         if direction == "up":
-            signal = 'buy'
+            signal = "buy"
         elif direction == "down":
-            signal = 'sell'
+            signal = "sell"
     port.process(signal, symbol, date, price)
 
 port.basic_report(show=True)
 
-# Generate and save a detailed  reports
-descr = f'Simple SMA Crossover on {symbol}'
-port.full_report('html', outfile=f'{descr}_report.html', title=descr)
-port.full_report('excel', outfile=f'{descr}_report.xlsx', title=descr)
+descr = f"Simple SMA Crossover on {symbol}"
+port.full_report("html", outfile=f"{descr}_report.html", title=descr)
 ```
-## Html report screenshot
+### Html report screenshot
 ![Report](https://github.com/ts-kontakt/antback/blob/main/antback-report.png?raw=true)
 
+### Generate excel report
+```
+port.full_report('excel', outfile=f'{descr}_report.xlsx', title=descr)
+```
 See detailed [excel report](https://github.com/ts-kontakt/antback/blob/main/examples/portfolio-report.xlsx) generated with above example.
 
 > **Note**: In fact, the average lengths in this case are slightly optimized; see: [examples/07_optimization.py](https://github.com/ts-kontakt/antback/blob/main/examples/07_optimization.py). The results may be even better if trailing ATR stop is used ([examples/04_atr_stop.py](https://github.com/ts-kontakt/antback/blob/main/examples/04_atr_stop.py)) for the sell signal instead of the averages.
@@ -84,7 +88,6 @@ port = ab.Portfolio(
 **Trading Patterns:**
 - **Simple strategies**: Use ```port.process()```
 ```python
-...
 if direction == "up":
     signal = 'buy'
 elif direction == "down":
@@ -93,7 +96,6 @@ port.process(signal, symbol, date, price)
 ```
 - **Complex strategies**: Use `port.buy()`, `port.sell()`, `port.update()` 
 ```python
-...
 if direction == "up":
     port.buy(symbol, date, price)
 elif direction == "down":
@@ -109,7 +111,7 @@ See [asset rotation example](examples/06_assets_rotation.py).
 - **Long-only**: Currently, only long positions are possible.
 
 ## More Examples & Use Cases
-It's best to run the included [examples/](examples/) to fully understand how Antback operates.
+It's best to run the included [examples](examples/) to fully understand how Antback operates.
 
 ### Wait Functions - Preventing Lookahead Bias
 
@@ -131,6 +133,15 @@ for date, price in data:
 See examples [05_easter_effect_test.py](https://github.com/ts-kontakt/antback/blob/main/examples/05_easter_effect_test.py).
 There is also a per-ticker wait version that creates separate functions for each new_multi_ticker_wait symbol: 
 [wait demo](https://github.com/ts-kontakt/antback/blob/main/examples/12_wait_example.py)
+
+### Cross Function
+
+```new_cross_func()``` returns a stateful crossover detector function that tracks when one time series crosses another.
+The returned function compares an **active** and **passive** series value at each call and returns:
+- "up" when the active value crosses above the passive
+- "down" when the active crosses below
+- None if there's no crossover or insufficient data
+
 
 ### Optimized Data Structures
 
@@ -179,7 +190,7 @@ The backtest wasn't specifically designed for speed, but surprisingly, it turned
 
 
 ## License
-MIT.
 ---
-
+MIT
+---
 *Perfect for teaching, prototyping, and production backtesting. Excellent clarity and control per bar.*
