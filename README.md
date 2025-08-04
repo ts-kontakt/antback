@@ -144,7 +144,8 @@ for date, price in data:
     port.process(signal, symbol, date, price)
 ```
 See examples [05_easter_effect_test.py](https://github.com/ts-kontakt/antback/blob/main/examples/05_easter_effect_test.py).
-here is also a per-ticker wait version (new_multi_ticker_wait) that creates separate functions for each symbol.
+
+There is also a per-ticker wait version (new_multi_ticker_wait) that creates separate functions for each symbol:
 [wait demo](https://github.com/ts-kontakt/antback/blob/main/examples/12_wait_example.py)
 
 ### Cross Function
