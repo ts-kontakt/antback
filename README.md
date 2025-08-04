@@ -1,8 +1,8 @@
 # Antback
 
-**Antback: Lightweight Backtesting with Heavyweight Insight.**
+**Antback: Fast, Transparent, and Debuggable Backtesting**
 
-A lightweight, event-loop-style backtest engine that allows a function-driven imperative style using lightweight stateful helper functions and data containers.
+A lightweight, event-loop-style backtest engine that allows a function-driven imperative style using efficient stateful helper functions and data containers.
 
 ## Key Features
 - **Transparency**: Every step is visible and debuggable. No black-box logic.
@@ -10,7 +10,7 @@ A lightweight, event-loop-style backtest engine that allows a function-driven im
 - **Interactive HTML Reports**: Detailed reports with sorting and filtering capabilities via DataTables.
 - **High Performance**: Optimized data structures for speed - very fast.
 - **Easy to use with different data sources** - only needs `date` and `price` values.
--  **Avoids Lookahead Bias**: Processes data point-by-point (wait functions can be used to prevent future data leaks).
+-  **Avoids Lookahead Bias**: by processing data sequentially. Use wait functions to enforce delays between signals.
 
 
 ## Installation
@@ -72,7 +72,7 @@ port.full_report("html", outfile=f"{descr}_report.html", title=descr)
 
 ### Interactive Filtering trades  
 
-<img src="https://github.com/ts-kontakt/antback/blob/main/filter_trades.gif?raw=true" alt="Sample Image" width="400" height="auto">
+<img src="https://github.com/ts-kontakt/antback/blob/main/filter_trades.gif?raw=true" alt="Interactive trade filtering demo" width="400" height="auto">
 
 ### Generate excel report
 ```
@@ -123,7 +123,7 @@ See [asset rotation example](examples/06_assets_rotation.py).
 - **Long-only**: Currently, only long positions are possible.
 
 ## More Examples & Use Cases
-It's best to run the included [examples](examples/) to fully understand how Antback operates.
+Explore the [examples](examples/) to see Antback in action—from basic strategies to  multi-asset rotations.
 
 ## Useful functions
 ### Wait Functions - Preventing Lookahead Bias
