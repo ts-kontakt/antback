@@ -3,24 +3,24 @@
 **Small (ant-like) but useful backtesting.**
 
 A lightweight, low-level, event-loop-style backtest engine written in a function-driven imperative style.
-This paradigm balances simplicity with robustness, making it ideal for rapid strategy prototyping while avoiding common backtesting pitfalls like lookahead bias.
 
 ## Key Features
-
-- **Interactive HTML Reports**: Detailed reports with sorting and filtering capabilities via DataTables
-- **High Performance**: Optimized data structures (RollingArray, RollingList) for speed - very fast especially with talipp indicators
--  **Avoids Lookahead Bias**: Processes data point-by-point (wait functions can be used to prevent future data leaks)
 - **Transparency**: Every step is visible and debuggable. No black-box logic.
+- **Balances simplicity with robustness** - ideal for rapid strategy prototyping
+- **Interactive HTML Reports**: Detailed reports with sorting and filtering capabilities via DataTables
+- **High Performance**: Optimized data structures for speed - very fast
+-  **Avoids Lookahead Bias**: Processes data point-by-point (wait functions can be used to prevent future data leaks)
+
 
 ## Installation
 
-Base functionality requires only `numpy` and `pandas`. For enhanced reporting, these lightweight packages can be installed:
+A key feature, besides backtesting, is interactive HTML reports that allow for easy inspection of trades. The lightweight [df2table](https://github.com/ts-kontakt/df2tables) module is used for this purpose. For Excel reports, [xlreport](https://github.com/ts-kontakt/xlreport) is used.
+
 
 ```bash
-#todo
-pip install df2tables  # For HTML reports - https://github.com/ts-kontakt/df2tables
-pip install xlreport   # For Excel reports - https://github.com/ts-kontakt/xlreport
+pip install antback df2tables xlreport
 ```
+Core functionality requires only `numpy` and `pandas` (pandas for reporting only). 
 
 ## Quick Start
 
@@ -28,27 +28,22 @@ pip install xlreport   # For Excel reports - https://github.com/ts-kontakt/xlrep
 
 ```python
 import numpy as np
-import yfinance as yf
 import antback as ab
 
-# Get data
+import yfinance as yf
 symbol = "QQQ"
 data = yf.Ticker(symbol).history(period='10y')
 
-# Initialize portfolio and indicators
 port = ab.Portfolio(10_000, single=True)
-fast, slow = 10, 30
-prices = ab.RollingList(maxlen=slow)
+fast, slow  = 10, 30
+prices = ab.RollingList(maxlen=slow)  # Stores enough prices for slow MA calculation
 cross = ab.new_cross_func()
-
-# Backtest loop
 for date, price in data['Close'].items():
     prices.append(price)
     price_history = prices.values()
-    signal = None
+    signal = None  # Reset signal for each iteration
     if len(price_history) >= slow:
-        fast_ma = np.mean(price_history[-fast:])
-        slow_ma = np.mean(price_history[-slow:])
+        fast_ma, slow_ma = np.mean(price_history[-fast:]), np.mean(price_history[-slow:])
         direction = cross(fast_ma, slow_ma)
         if direction == "up":
             signal = 'buy'
@@ -56,13 +51,16 @@ for date, price in data['Close'].items():
             signal = 'sell'
     port.process(signal, symbol, date, price)
 
-# Generate reports
-port.basic_report()
+port.basic_report(show=True)
+
+# Generate and save a detailed  reports
 descr = f'Simple SMA Crossover on {symbol}'
 port.full_report('html', outfile=f'{descr}_report.html', title=descr)
 port.full_report('excel', outfile=f'{descr}_report.xlsx', title=descr)
 ```
 ![Report](https://github.com/ts-kontakt/antback/blob/main/antback-report.png?raw=true)
+
+Download [excel report](https://github.com/ts-kontakt/antback/blob/main/examples/portfolio-report.xlsx) generated with above example.
 
 > **Note**: In fact, the average lengths in this case are slightly optimized; see: [examples/07_optimization.py](https://github.com/ts-kontakt/antback/blob/main/examples/07_optimization.py). The results may be even better if trailing ATR stop is used ([examples/04_atr_stop.py](https://github.com/ts-kontakt/antback/blob/main/examples/04_atr_stop.py)) for the sell signal instead of the averages.
 
@@ -81,33 +79,61 @@ port = ab.Portfolio(
 )
 ```
 
-**Key Methods:**
-- `port.process(signal, symbol, date, price)` - **Recommended for simple single-ticker strategies**
-- `port.buy(symbol, date, price, fixed_val=None)` - Buy shares (for complex multi-ticker strategies)
-- `port.sell(symbol, date, price)` - Sell shares (for complex multi-ticker strategies)
-- `port.update(symbol, date, price)` - Update position prices (required when using buy/sell directly)
-
 
 **Trading Patterns:**
-- **Simple strategies**: Use `port.process()` - handles everything automatically
-- **Complex strategies**: Use `port.buy()`, `port.sell()`, `port.update()` directly for full control
-  ```python
-      ...
-        if direction == "up":
-            port.buy( symbol, date, price)
-        elif direction == "down":
-            port.sell( symbol, date, price)
-    port.update(symbol, date, price)
+- **Simple strategies**: Use `port.process()
+```python
+...
+if direction == "up":
+    signal = 'buy'
+elif direction == "down":
+    signal = 'sell'
+port.process(signal, symbol, date, price)
+```
+- **Complex strategies**: Use `port.buy()`, `port.sell()`, `port.update()` 
+```python
+...
+if direction == "up":
+    port.buy(symbol, date, price)
+elif direction == "down":
+    port.sell(symbol, date, price)
+port.update(symbol, date, price)
   ```
-   See [asset rotation example](examples/06_assets_rotation.py).
-  
+See [asset rotation example](examples/06_assets_rotation.py).
 
+### Important Notes
+- **No re-buying/re-selling**: Duplicate signals are ignored (set `warn=True` to see warnings)
+- **Multi-position support** - Currently supported with manual trade sizing via `fixed_val` parameter. (set single=False)
+- **Intraday support**: Available but not extensively tested
+- **Long-only**: Currently, only long positions are possible.
 
+## More Examples & Use Cases
+It's best to run the included [examples/](examples/) to fully understand how Antback operates.
+
+### Wait Functions - Preventing Lookahead Bias
+
+Example use of wait function.
+
+```python
+sell_timer = ab.new_wait_n_bars(4) # wait 4 bars then sell
+
+for date, price in data:
+    signal = None
+    ready_to_sell = sell_timer(bar=date)
+    if ready_to_sell:
+        signal = 'sell'
+    if buy_conditon:
+        signal = 'buy'
+        sell_timer(start=True)
+    port.process(signal, symbol, date, price)
+```
+See examples [05_easter_effect_test.py](https://github.com/ts-kontakt/antback/blob/main/examples/05_easter_effect_test.py), [wait demo](https://github.com/ts-kontakt/antback/blob/main/examples/12_wait_example.py)
 
 ### Optimized Data Structures
 
 #### RollingArray
-Fast numpy-based rolling window (2x-10x faster than np.roll):
+Fast numpy-based rolling window  (Uses manual slice assignment ([:] = [...])	In-place operation; avoids temporary memory allocations. 
+can be 2x to 10x faster than np.roll):
 ```python
 prices = ab.RollingArray(window_size=50)
 prices.append(new_price)
@@ -122,26 +148,9 @@ prices.append(price_data)
 recent_prices = prices.values()
 ```
 
-### Wait Functions - Preventing Lookahead Bias
-
-Antback provides specialized wait functions to ensure signals only trigger after sufficient data points:
-
-```python
-wait_func = ab.new_wait_n_bars(n=5)  # Wait for 5 unique bars
-
-# Start waiting after a buy signal
-wait_func(start=True)
-
-# Check each bar if waiting period is complete
-for date, price in data.items():
-    if wait_func(bar=date):  # Returns True after 5 unique bars
-        # Safe to generate new signal - no data leakage
-        signal = calculate_signal()
-```
-
 ### Performance & Technical Indicators
 
-Antback works exceptionally well with event-driven technical indicators. For optimal performance, [talipp](https://github.com/femtotrader/talipp) indicators which are designed for streaming data may be used:
+Antback is most suitable with event-driven technical indicators. For optimal performance, [talipp](https://github.com/femtotrader/talipp) indicators which are designed for streaming data may be used:
 
 ```python
 from talipp.indicators import SMA
@@ -159,25 +168,6 @@ for date, price in data.items():
 **Benchmark data**:
 
 [examples/11_simple_benchmark.py](https://github.com/ts-kontakt/antback/blob/main/examples/11_simple_benchmark.py) 
-
-## Examples & Use Cases
-It's best to run the included [examples/](examples/) to fully understand how Antback operates.
-
-### Multiple Position Support
-Currently supported with manual trade sizing via `fixed_val` parameter. See [asset rotation example](examples/06_assets_rotation.py).
-
-## Design Philosophy
-    Explicit > Implicit
-    State Isolation - Helper functions manage their own state
-    Bias Prevention - Strict chronological processing
-    Minimal Dependencies - Core requires only numpy/pandas
-
-## Important Notes
-- **No re-buying/re-selling**: Duplicate signals are ignored (set `warn=True` to see warnings)
-- **Single vs Multi-asset**: Use `single=True` for one ticker
--  Multi-position support exists — use fixed_val to control trade sizing.
-- **Minimum cash**: 10,000 minimum starting capital required
-- **Intraday support**: Available but not extensively tested
 
 
 ## License
