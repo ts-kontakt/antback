@@ -190,7 +190,7 @@ The backtest wasn't specifically designed for speed, but surprisingly, it turned
 
 
 ## License
----
 MIT
+
 ---
 *Perfect for teaching, prototyping, and production backtesting. Excellent clarity and control per bar.*
