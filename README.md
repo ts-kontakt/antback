@@ -22,6 +22,12 @@ pip install antback df2tables xlreport
 ```
 Core functionality requires only `numpy` and `pandas` (pandas for reporting only). 
 
+### Demo
+```python
+import antback as ab
+ab.demo()
+```
+
 ## Quick Start
 
 ### Simple SMA Crossover Strategy
