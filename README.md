@@ -198,10 +198,9 @@ for date, price in data.items():
 ```
 ### Performance
 
-**Benchmark data**:
-Although Antback was not specifically designed for speed, it is surprisingly fast. Run the benchmark included with the examples (30-year SPY moving average crossover).
+Although Antback was not specifically designed for speed, it is **surprisingly fast**. Run the benchmark included with the examples (30-year SPY moving average crossover).
 
-[examples/11_simple_benchmark.py](https://github.com/ts-kontakt/antback/blob/main/examples/11_simple_benchmark.py) 
+[benchmark](https://github.com/ts-kontakt/antback/blob/main/examples/11_simple_benchmark.py) 
 
 
 ## License
