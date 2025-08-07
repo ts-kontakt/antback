@@ -179,6 +179,24 @@ recent_prices = prices.values()
 
 For more advanced multi-ticker strategies or those using machine learning, it's often necessary to track more than a few dozen rolling features. The ```NamedRollingArrays``` and ```PerTickerNamedRollingArrays``` classes are available for this purpose ([rolling demo](https://github.com/ts-kontakt/antback/blob/main/examples/13_rolling_demo.py)).
 
+### Machine Learning Trading Strategy Example
+
+This example demonstrates how to implement a machine learning-based trading strategy using Antback with technical features and scikit-learn classifiers. Uses **NamedRollingLists** maintains multiple synchronized rolling windows optimized for high-frequency feature updates.
+
+#### Feature Engineering
+The strategy calculates:
+- Technical indicators (RSI, ROC)
+- Candle patterns and characteristics
+- Market timing features (day of month, weekday)
+- Price action metrics (gaps, drawdowns)
+#### Training Process
+- Calculates forward returns as targets
+- Encodes categorical features
+- Discretizes numerical features
+- Trains the classifier
+
+See complete example: [14_machine_learning.py](https://github.com/ts-kontakt/antback/blob/main/examples/14_machine_learning.py)
+
 
 ### Performance & Technical Indicators
 
