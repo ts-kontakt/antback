@@ -184,16 +184,25 @@ For more advanced multi-ticker strategies or those using machine learning, it's 
 This example demonstrates how to implement a machine learning-based trading strategy using Antback with technical features and scikit-learn classifiers. Uses **NamedRollingLists** maintains multiple synchronized rolling windows optimized for high-frequency feature updates.
 
 #### Feature Engineering
-The strategy calculates:
-- Technical indicators (RSI, ROC)
-- Candle patterns and characteristics
 - Market timing features (day of month, weekday)
 - Price action metrics (gaps, drawdowns)
+- Technical indicators (RSI, ROC)
+- Candle patterns and characteristics
+
+Rolling Window Calculations: feature calculations, such as get_indicator_value_and_score, use data only from the past within a defined rolling window. 
+
+#### Use of Transformers:
+Use fit_transform on the training data and only transform on the test data. This ensures that information from the test set (like its data distribution for binning or categories for encoding) does not "leak" into the transformation process.
+- Training: ```discretizer.fit_transform(...)```
+- Testing: ```discretizer.transform(...)```
+
 #### Training Process
 - Calculates forward returns as targets
 - Encodes categorical features
 - Discretizes numerical features
 - Trains the classifier
+#### To-do
+Implement Walk-Forward Optimization: Instead of a single train/test split, use a walk-forward approach. 
 
 See complete example: [14_machine_learning.py](https://github.com/ts-kontakt/antback/blob/main/examples/14_machine_learning.py)
 
