@@ -114,7 +114,7 @@ elif direction == "down":
     port.sell(symbol, date, price)
 port.update(symbol, date, price)
   ```
-See [asset rotation example](examples/06_assets_rotation.py).
+See [06_simple_2_assets_rotation.py](https://github.com/ts-kontakt/antback/blob/main/examples/06_simple_2_assets_rotation.py).
 
 ### Important Notes
 - **No re-buying or re-selling**: Duplicate signals are ignored (set `warn=True` to see warnings)
@@ -122,8 +122,6 @@ See [asset rotation example](examples/06_assets_rotation.py).
 - **Intraday support**: Available but not extensively tested
 - **Long-only**: Currently, only long positions are possible.
 
-## More Examples & Use Cases
-Explore the [examples](examples/) to see Antback in action—from basic strategies to  multi-asset rotations.
 
 ## Useful functions
 ### Wait Functions - Preventing Lookahead Bias
@@ -178,6 +176,27 @@ recent_prices = prices.values()
 #### Multi-ticker strategies
 
 For more advanced multi-ticker strategies or those using machine learning, it's often necessary to track more than a few dozen rolling features. The ```NamedRollingArrays``` and ```PerTickerNamedRollingArrays``` classes are available for this purpose ([rolling demo](https://github.com/ts-kontakt/antback/blob/main/examples/13_rolling_demo.py)).
+
+## More Examples & Use Cases
+Explore the [examples](examples/) to see Antback in action—from basic strategies to  multi-asset rotations.
+
+### Mebane Faber–Style Asset Rotation (10-Month SMA)
+
+This example implements a variation of the tactical asset allocation strategy popularized by **Mebane Faber** in *The Ivy Portfolio*.  
+It compares a **3-month SMA** with a **10-month SMA** for multiple assets and rotates into assets whose short-term trend is above the long-term trend, rebalancing at **month-end only**.
+
+**Key points in this implementation:**
+- **No resampling to monthly closes**: The 10-month SMA is calculated using **daily data**, but trading decisions are only made on **month-end dates** obtained from  
+  `antback.get_monthly_points()`. This avoids distortions caused by monthly bar aggregation.
+- **Equal-weight allocation** to selected assets.
+- **Multi-asset support** (e.g., SPY, GLD, TLT).
+- Uses `ab.NamedRollingLists` to efficiently maintain rolling daily prices for SMA calculation.
+
+💡*Puzzle for the reader*: Try adding Bitcoin to the mix by including `'BTC-USD'` in the ticker list… **see what happens**.
+
+See the full script in  
+[06_faber_assets_rotation.py](https://github.com/ts-kontakt/antback/blob/main/examples/06_faber_assets_rotation.py).  
+
 
 ### Machine Learning Trading Strategy Example
 
