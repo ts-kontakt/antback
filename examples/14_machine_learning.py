@@ -87,13 +87,18 @@ def is_tall_candle(candle_obj, open_close_percent_ranges):
     Returns:
         bool: True if candle is tall, False otherwise.
     """
-    stats.percentileofscore(open_close_percent_ranges, candle_obj.opcldist_prc)
-    if (candle_obj.opcldist_prc > 75 or 
+    # Calculate the percentile score and store it in a variable
+    percentile_score = stats.percentileofscore(
+        open_close_percent_ranges, candle_obj.opcldist_prc
+    )
+    
+    # Use the calculated percentile_score in the condition
+    if (percentile_score > 75 or 
         candle_obj.opcldist_prc > open_close_percent_ranges.mean() + 
-        open_close_percent_ranges.std() * 2):
+        open_close_percent_ranges.std() * 1.5):
         return True
+    
     return False
-
 
 def get_percentile_score(value, value_list):
     """
@@ -271,7 +276,7 @@ def make_training_data(ticker, price_data, model, feat_window_size, forecast_day
     if positive_tgt  < target_min:
         print(f'! correcting positive_tgt from {positive_tgt:.2f} into: {target_min}')
         positive_tgt = target_min
-    features_df["target"] = np.where(features_df.ret_forward > 0.01, 1, 0)
+    features_df["target"] = np.where(features_df.ret_forward > positive_tgt, 1, 0)
     features_df["target"] = features_df.target.astype("category")
     positive_tgt_prc = features_df["target"].value_counts()[1] / len((features_df)) * 100
     # print(f'target_prc: {round(positive_tgt_prc, 1)}, target treshold: {round(positive_tgt,1)}' )
@@ -325,7 +330,7 @@ def make_training_data(ticker, price_data, model, feat_window_size, forecast_day
     result.features = important_features
     result.train_data = features_df
     result.days_forward = forecast_days
-    result.score = score
+    # result.score = score
     
     return result
 
@@ -401,23 +406,24 @@ def main():
     
     # Configuration parameters
     TICKER_SYMBOL = "QQQ"
-    TEST_PERIOD_DAYS = 400
+    TEST_PERIOD_DAYS = 600
     TRAINING_MULTIPLIER = 4  # How much more training data than test data
     FORECAST_HORIZON_DAYS = 2
     FEATURE_WINDOW_SIZE = 90  # Lookback window for feature calculation
-    MIN_TARGET_RETURN = 0.4  # Minimum acceptable return threshold
+    MIN_TARGET_RETURN = 0.3  # Minimum acceptable return threshold
     
     # Initialize price data
     import yfinance as yf
     price_data = yf.Ticker(TICKER_SYMBOL).history(period="10y")
     
     # Split data into training and test sets
-    test_data = price_data.tail(TEST_PERIOD_DAYS)
     training_data = price_data.iloc[:-TEST_PERIOD_DAYS].tail(TEST_PERIOD_DAYS * TRAINING_MULTIPLIER)
     
-    # Initialize model (LightGBM classifier)
+    # Initialize model
     from lightgbm import LGBMClassifier
     prediction_model = LGBMClassifier()
+    prediction_model = DecisionTreeClassifier()
+    # prediction_model = RandomForestClassifier()
     
     # Train the model and get training results
     training_results = make_training_data(
@@ -443,6 +449,7 @@ def main():
         fees=0
     )
     
+    test_data = price_data.tail(TEST_PERIOD_DAYS)
     backtest_strategy(
         portfolio=test_portfolio,
         training_result=training_results,

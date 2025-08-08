@@ -77,7 +77,7 @@ def run_backtest(price_history, tickers, rolling_months=10):
         current_date = pd.to_datetime(record[0])
         prices = {ticker: float(getattr(record, ticker)) for ticker in tickers}
 
-        # Skip if any asset price is missing for the current date
+        # Skip if any asset price is missing for the current date 
         if np.any(pd.isna(list(prices.values()))):
             continue
 
@@ -129,14 +129,8 @@ def run_backtest(price_history, tickers, rolling_months=10):
 
 def main():
     """
-    Entry point for the SMA crossover backtest script.
-
     This backtest implements a variation of the Mebane Faber
     tactical asset rotation strategy described in "The Ivy Portfolio".
-
-    Unlike some implementations, it does not use monthly bars for SMA calculation.
-    Daily data is preserved, and month-end decision points are determined via 
-    `antback.get_monthly_points()`.
     """
     ROLLING_AVG_MONTHS = 10  # Number of months for the long-term moving average
     tickers = ['SPY', 'GLD', 'TLT']
