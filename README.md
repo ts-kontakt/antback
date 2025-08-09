@@ -72,7 +72,7 @@ port.full_report("html", outfile=f"{descr}_report.html", title=descr)
 
 ### Interactive Filtering trades  
 
-<img src="https://github.com/ts-kontakt/antback/blob/main/filter_trades.gif?raw=true" alt="Interactive trade filtering demo" width="400" height="auto">
+<img src="https://github.com/ts-kontakt/antback/blob/main/filter_trades.gif?raw=true" alt="Interactive trade filtering demo" width="600" height="auto">
 
 ### Generate excel report
 ```
