@@ -7,7 +7,6 @@ from collections import defaultdict, deque
 import numpy as np
 import pandas as pd
 
-
 def get_drawdown(prices):
     """Vectorized calculation of maximum drawdown for a numpy array of prices."""
     assert np.all(prices >= 0), "All prices must be non-negative"
@@ -449,6 +448,80 @@ def datetime_to_str(dt, fmt="%Y-%m-%d %H:%M:%S"):
         return dt.strftime(fmt)
 
     return repr(dt)
+
+
+
+def calculate_annual_growth_rate(portfolio) -> float:
+    """
+    Calculate the annualized growth rate percentage using compound annual growth rate (CAGR).
+
+    CAGR = ((End Value / Start Value) ^ (1 / Years)) - 1
+
+    Args:
+        portfolio: An object with attributes:
+                   - pos_history (dict[date, float]): historical positions by date
+                   - starting_capital (float): initial investment
+                   - max_date (date): end date of the period
+                   current_value() -> float: method returning current portfolio value
+
+    Returns:
+        float: Annualized growth rate as a percentage (e.g., 5.0 for 5%).
+
+    Raises:
+        ValueError: If inputs are invalid or calculation fails due to logical issues.
+    """
+    if not hasattr(portfolio, 'pos_history') or not portfolio.pos_history:
+        raise ValueError("Portfolio must have non-empty pos_history")
+
+    if not hasattr(portfolio, 'starting_capital'):
+        raise ValueError("Portfolio missing starting_capital")
+    if not callable(getattr(portfolio, 'current_value', None)):
+        raise ValueError("Portfolio must have current_value() method")
+
+    # try:
+    if 1:
+        start_date = min(portfolio.pos_history.keys())
+        end_date = portfolio.max_date
+
+        if not isinstance(start_date, (dtm.date, dtm.datetime)) or not isinstance(end_date, (dtm.date, dtm.datetime)):
+            raise ValueError("Dates in pos_history and max_date must be date or datetime objects")
+
+        if start_date >= end_date:
+            raise ValueError("Start date must be before end date")
+
+        # Calculate total time in years using days for accuracy
+        delta_days = (end_date - start_date).days
+        if delta_days <= 0:
+            raise ValueError("Time period must be greater than zero days")
+
+        total_years = delta_days / 365.25  # Accounts for leap years
+
+        start_value = float(portfolio.starting_capital)
+        end_value = float(portfolio.current_value())
+
+        if start_value < 0:
+            raise ValueError("Starting value cannot be negative")
+        if start_value == 0:
+            raise ValueError("Starting value cannot be zero (division by zero)")
+
+        if end_value < 0:
+            raise ValueError("Ending value cannot be negative")
+
+        if end_value == start_value:
+            return 0.0
+
+        # CAGR formula
+        growth_factor = end_value / start_value
+        annual_growth_rate = (growth_factor ** (1 / total_years) - 1) * 100
+
+        return annual_growth_rate
+
+    # except (AttributeError, TypeError) as e:
+        # raise ValueError("Invalid portfolio object structure") from e
+    # except ValueError:
+        # raise  # Re-raise known value errors
+    # except Exception as e:
+        # raise ValueError(f"Unexpected error during growth rate calculation: {str(e)}") from e
 
 
 if __name__ == "__main__":

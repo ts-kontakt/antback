@@ -122,6 +122,8 @@ class Portfolio:
         """Normalize date object to datetime/date."""
         if isinstance(date_obj, (date, datetime)):
             return date_obj
+        if isinstance(date_obj, (int, str)):
+            raise ValueError("Integer dates or strings are not allowed")
         return pd.to_datetime(date_obj)
 
     def _validate_and_update_date(self, date_obj):
@@ -160,12 +162,14 @@ class Portfolio:
             return
 
         if fixed_val:
-            assert price < fixed_val
+            # assert price < fixed_val, f"fixed_val {fixed_val}  must be >= price {price} "
+            if price > fixed_val:
+                print(f"!warning: price {price}  >= fixed_val {fixed_val}")
             assert fixed_val >= self.MIN_AMOUNT, f"fixed_val amount must be >= {
                 self.MIN_AMOUNT
             }"
             if self.cash < fixed_val:
-                msg = f"Insufficient cash: {self.cash:.1f} < {fixed_val}"
+                msg = f"{date_obj}Insufficient cash: {self.cash:.1f} < {fixed_val}"
                 self.events[date_obj].append(msg)
                 raise ValueError(msg)
             available_investment = fixed_val
@@ -212,9 +216,8 @@ class Portfolio:
 
         if self.warn:
             print(
-                f"""Bought {quantity:.4f} shares of {ticker} at {price:.2f}, total cost: {
-                    total_cost:.2f
-                }"""
+                f"""Bought {quantity:.4f} shares of {ticker} at {price:.2f}, 
+                total cost: {total_cost:.2f}"""
             )
 
         self.save_positions(date_obj)
@@ -250,9 +253,8 @@ class Portfolio:
 
         if self.warn:
             print(
-                f"""Sold {quantity:.4f} shares of {ticker} at {price:.2f}, net proceeds: {
-                    net_proceeds:.2f
-                }"""
+                f"""Sold {quantity:.4f} shares of {ticker} at {price:.2f}, 
+                net proceeds: {net_proceeds:.2f}"""
             )
 
         self.save_positions(date_obj)
@@ -271,7 +273,7 @@ class Portfolio:
 
     def process(self, signal, ticker, date_obj, price, buy_fixed=None, log_msg=""):
         """Unified entry-point for any daily signal."""
-        if signal is None:
+        if signal == "update" or signal is None:
             self.update(ticker, date_obj, price)
         elif signal == "buy":
             self.buy(ticker, date_obj, price, fixed_val=buy_fixed)
@@ -335,10 +337,8 @@ class Portfolio:
             positions_value = self.get_open_positions()["positions_total"]
             total += positions_value
             if self.warn:
-                print(
-                    f"""Cash: {self.cash:.2f}, Positions: {positions_value:.2f}, Total: {
-                        total:.2f
-                    }"""
+                print(f"""Cash: {self.cash:.2f}, Positions: {positions_value:.2f}, 
+                Total: {total:.2f}"""
                 )
         return total
 
@@ -439,44 +439,6 @@ class Portfolio:
         pf_return = pct_diff(self.starting_capital, self.current_value())
         return pf_return, drawdown_val
 
-
-def calculate_annual_growth_rate(portfolio):
-    """Calculate the annualized growth rate percentage."""
-    try:
-        start_date = min(portfolio.pos_history.keys())
-        end_date = portfolio.max_date
-
-        if start_date >= end_date:
-            raise ValueError("Start date must be before end date")
-
-        difference = relativedelta(end_date, start_date)
-        months = difference.months + (difference.years * 12)
-        total_years = difference.years + (months / 12.0)
-
-        if total_years <= 0:
-            months = max(months, 1)
-            total_years = months / 12.0
-
-        start_value = portfolio.starting_capital
-        end_value = portfolio.current_value()
-
-        if end_value < 0:
-            raise ValueError("Ending value cannot be negative")
-
-        if end_value == start_value:
-            return 0.0
-
-        growth_factor = end_value / start_value
-        annual_growth_rate = (growth_factor ** (1 / total_years) - 1) * 100
-
-        return annual_growth_rate
-
-    except (AttributeError, TypeError) as e:
-        raise ValueError("Invalid portfolio object structure") from e
-    except Exception as e:
-        raise ValueError(f"Error calculating growth rate: {str(e)}") from e
-
-
 def summary(portfolio, show=False):
     """Generate portfolio summary statistics."""
     if not portfolio.pos_history or not portfolio.trades:
@@ -518,7 +480,7 @@ def summary(portfolio, show=False):
             f"{utils.datetime_to_str(start_date)} to {utils.datetime_to_str(end_date)}",
         ],
         ["Total Return (%):", f"{net_profit_prc:+.2f}%"],
-        ["Ann. Ret. (%):", f"{calculate_annual_growth_rate(portfolio):.2f}%"],
+        ["Ann. Ret. (%):", f"{utils.calculate_annual_growth_rate(portfolio):.2f}%"],
         ["Max Drawdown:", f"{drawdown_val:.1f}%"],
         ["Winning Ratio (%):", f"{prc_profitable:.2f}%"],
         ["Max. Drawdown Start:", f"{utils.datetime_to_str(drawdown_start)}"],
@@ -578,15 +540,24 @@ def gen_equity(portfolio, show=False):
         return pd.DataFrame()
 
     mdf = pd.DataFrame(equity, columns=["date_obj", "capital", "cash", "positions"])
-    mdf["events"] = tuple([portfolio.events.get(x) for x in mdf.date_obj.values])
-    mdf["pydate"] = mdf.date_obj.map(lambda x: pd.to_datetime(x))
+    
+    events_dict = {utils.datetime_to_str(k) : v for k,v in portfolio.events.items()}
+    mdf_py_dates = [utils.datetime_to_str(x) for x in mdf.date_obj.values]
+    mdf["events"] = [str(events_dict.get(x, '')) for x in mdf_py_dates]
 
+    mdf["pydate"] = mdf.date_obj.map(lambda x: pd.to_datetime(x).date())
+    gdf = mdf.groupby(["pydate"]).agg({
+            'date_obj': 'last',  
+            'capital': 'last', 
+            'cash': 'last',  
+             'positions': 'last',  
+            'events': lambda x: ''.join(x)
+        })
+ 
+   
     all_days = pd.date_range(mdf.pydate.min(), mdf.pydate.max(), freq="D")
-    mdf.set_index("pydate", inplace=True)
-    ndf = mdf.reindex(all_days)
-    ndf["events"] = ndf["events"].fillna("-")
+    ndf = gdf.reindex(all_days).ffill()
     ndf["date_obj"] = ndf["date_obj"].map(lambda x: utils.datetime_to_str(x))
-    ndf.ffill(inplace=True)
     return ndf
 
 
@@ -852,7 +823,7 @@ def html_report(portfolio, outfile="portfolio-report.html", title="Portfolio rep
     trades_table = df2t.render_inline(
         trades_df,
         title="Portfolio Trades",
-        dropdown_select_threshold=4,
+        dropdown_select_threshold=7,
         load_column_control=True,
         num_html=["net_profit", "profit_pct", "gross_profit"],
     )
@@ -875,7 +846,7 @@ def html_report(portfolio, outfile="portfolio-report.html", title="Portfolio rep
         "generate_jsdata": "// generate_jsdata function",
     }
 
-    template_file = "antreport_templ.html"
+    template_file = "antreport_templ.htm"
     try:
         # Python 3.9+
         from importlib import resources
@@ -935,7 +906,7 @@ def generate_test_data() -> Portfolio:
     from random import randint
 
     """Generate test data with guaranteed chronological order"""
-    testp = Portfolio(100_000, single=False, warn=0)
+    testp = Portfolio(100_000, single=False, warn=1)
     stocks = ["AAPL", "GOOG", "TSLA", "AMZN", "MSFT"]
     prices = {ticker: 100 * (0.8 + random.random() * 0.4) for ticker in stocks}
     trade_count = 0
@@ -1059,7 +1030,7 @@ def demo():
     test_pf  = generate_test_data()
     print(test_pf.basic_report())
     test_pf.full_report("html")
-    # test_pf.full_report('excel')
+    test_pf.full_report('excel')
 
 if __name__ == "__main__":
     demo()
