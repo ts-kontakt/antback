@@ -51,7 +51,7 @@ cross = ab.new_cross_func()
 for date, price in data["Close"].items():
     prices.append(price)
     price_history = prices.values()
-    signal = None  # Reset signal
+    signal = "update"  # Reset signal - just update portfolio position 
     
     if len(price_history) >= slow:
         fast_ma, slow_ma = np.mean(price_history[-fast:]), np.mean(price_history[-slow:])
