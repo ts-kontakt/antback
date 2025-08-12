@@ -228,7 +228,7 @@ See complete example: [14_machine_learning.py](https://github.com/ts-kontakt/ant
 
 ### Performance & Technical Indicators
 
-Antback does not include its own indicators (except for a useful ATR stop line), but you can use any technical analysis (TA) library. Antback is most suitable with event-driven technical indicators. For optimal performance, [talipp](https://github.com/femtotrader/talipp) indicators, which is designed for streaming data may be used:
+Antback does not include its own indicators (except for a useful ATR stop line), but you can use any technical analysis (TA) library. Antback is most suitable with event-driven technical indicators. For optimal performance, [talipp](https://github.com/nardew/talipp) indicators, which is designed for streaming data may be used:
 
 ```python
 from talipp.indicators import SMA
