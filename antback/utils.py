@@ -20,34 +20,45 @@ def get_drawdown(prices):
 
     return {"max_dd": max_dd * -1, "index": max_dd_idx, "start": start_idx}
 
+from collections import deque, defaultdict
+import numpy as np
+import math
+
 
 class RollingList:
+    """Maintain a fixed-length list using deque."""
 
     def __init__(self, maxlen):
         self._buffer = deque(maxlen=maxlen)
 
     def append(self, value):
+        """Append a value to the list."""
         self._buffer.append(value)
 
     def values(self):
+        """Return list of current values."""
         return list(self._buffer)
 
 
 class NamedRollingLists:
+    """Store multiple RollingLists keyed by name."""
 
     def __init__(self, maxlen=10):
         self._data = {}
         self._maxlen = maxlen
 
     def append(self, key, value):
+        """Append a value to the list for a given key."""
         if key not in self._data:
             self._data[key] = RollingList(self._maxlen)
         self._data[key].append(value)
 
     def get(self, key):
+        """Return list of values for a given key."""
         return self._data.get(key, RollingList(self._maxlen)).values()
 
     def get_keys(self):
+        """Return list of stored keys."""
         return list(self._data.keys())
 
     def __repr__(self):
@@ -55,20 +66,20 @@ class NamedRollingLists:
 
 
 class PerTickerRollingStore:
-    """Stores rolling value history for multiple tickers."""
+    """Store multiple named rolling lists per key."""
 
     def __init__(self, array_size=10):
         self._store = defaultdict(dict)
         self._array_size = array_size
 
     def append(self, key, series_name, value):
-        """Append a value to the given series for a key."""
+        """Append a value to the series for a key."""
         if series_name not in self._store[key]:
             self._store[key][series_name] = RollingList(self._array_size)
         self._store[key][series_name].append(value)
 
     def get(self, key, series_name):
-        """Get the rolling array for a given key and series."""
+        """Return list of values for a given key and series."""
         series = self._store.get(key, {})
         return series.get(series_name).values()
 
@@ -81,30 +92,36 @@ class PerTickerRollingStore:
 
 
 class RollingArray:
+    """Maintain a fixed-length NumPy array buffer."""
 
     def __init__(self, size):
         self._buffer = np.zeros(size, dtype=float)
 
     def append(self, value):
+        """Append a value, shifting older values left."""
         self._buffer[0:-1] = self._buffer[1:]
         self._buffer[-1] = value
 
     def values(self):
+        """Return current array values."""
         return self._buffer
 
 
 class NamedRollingArrays:
+    """Store multiple RollingArrays keyed by name."""
 
     def __init__(self, array_size=10):
         self._buffers = {}
         self._buffer_size = array_size
 
     def append(self, key, value):
+        """Append a value to the array for a key."""
         if key not in self._buffers:
             self._buffers[key] = RollingArray(self._buffer_size)
         self._buffers[key].append(value)
 
     def get(self, key):
+        """Return array values for a given key."""
         buffer = self._buffers.get(key)
         return buffer.values() if buffer else None
 
@@ -113,20 +130,20 @@ class NamedRollingArrays:
 
 
 class PerTickerNamedRollingArrays:
-    """Stores multiple named rolling arrays per key (e.g., ticker)."""
+    """Store multiple named rolling arrays per key."""
 
     def __init__(self, array_size=10):
         self._store = defaultdict(dict)
         self._array_size = array_size
 
     def append(self, key, series_name, value):
-        """Append a value to the given series for a key."""
+        """Append a value to the series for a key."""
         if series_name not in self._store[key]:
             self._store[key][series_name] = RollingArray(self._array_size)
         self._store[key][series_name].append(value)
 
     def get(self, key, series_name):
-        """Get the rolling array for a given key and series."""
+        """Return array values for a given key and series."""
         series = self._store.get(key, {})
         return series.get(series_name).values()
 
@@ -139,7 +156,7 @@ class PerTickerNamedRollingArrays:
 
 
 def pct_dist(prev, today):
-    """Calculate percentage distance between two values."""
+    """Return absolute percentage difference between two values."""
     distance = math.sqrt((prev - today)**2)
     try:
         return abs((distance / max(prev, today)) * 100.0)
@@ -148,6 +165,7 @@ def pct_dist(prev, today):
 
 
 class Candle:
+    """Represent a candlestick with OHLC values."""
 
     def __init__(self, op, hi, lo, cl):
         op, hi, lo, cl = float(op), float(hi), float(lo), float(cl)
@@ -181,6 +199,7 @@ class Candle:
             self.ibs = (cl - lo) / (hi - lo) if (hi - lo) != 0 else 0
         except ZeroDivisionError:
             self.ibs = 0
+
 
 
 def new_cross_func():
