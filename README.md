@@ -153,8 +153,8 @@ There is also a per-ticker wait version (new_multi_ticker_wait) that creates sep
 > **ℹ️ Note:** In most cases, the **active** series is a *shorter time frame* indicator compared to the **passive** series. This means it reacts faster to changes, making crossovers more responsive.
 
 The returned function compares an **active** and **passive** series value at each call and returns:
-- **"up"** when the **active** value moves from below to above the **passive** value
-- **"down"** when the **active** value moves from above to below the **passive** value
+- **`up`** when the **active** value moves from below to above the **passive** value
+- **`down`** when the **active** value moves from above to below the **passive** value
 - `None` if there's no crossover or insufficient data
 
 
