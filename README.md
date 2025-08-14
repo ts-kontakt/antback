@@ -118,7 +118,7 @@ See [06_simple_2_assets_rotation.py](https://github.com/ts-kontakt/antback/blob/
 
 ### Important Notes
 - **No re-buying or re-selling**: Duplicate signals are ignored (set `warn=True` to see warnings)
-- **Multi-position support** - Currently supported with manual trade sizing via `fixed_val` parameter. (set single=False)
+- **Multi-position support** - Currently supported with manual trade sizing via `fixed_val` parameter. (set single=False, see:[example](https://github.com/ts-kontakt/antback/blob/main/examples/06_faber_assets_rotation.py). 
 - **Intraday support**: Available but not extensively tested
 - **Long-only**: Currently, only long positions are possible.
 
@@ -149,10 +149,14 @@ There is also a per-ticker wait version (new_multi_ticker_wait) that creates sep
 ### Cross Function
 
 ```new_cross_func()``` returns a stateful crossover detector function that tracks when one time series crosses another.
+
+> **ℹ️ Note:** In most cases, the **active** series is a *shorter time frame* indicator compared to the **passive** series. This means it reacts faster to changes, making crossovers more responsive.
+
 The returned function compares an **active** and **passive** series value at each call and returns:
-- "up" when the active value crosses above the passive
-- "down" when the active crosses below
-- None if there's no crossover or insufficient data
+- **"up"** when the **active** value moves from below to above the **passive** value
+- **"down"** when the **active** value moves from above to below the **passive** value
+- `None` if there's no crossover or insufficient data
+
 
 
 ### Optimized Data Structures
