@@ -118,7 +118,7 @@ See [06_simple_2_assets_rotation.py](https://github.com/ts-kontakt/antback/blob/
 
 ### Important Notes
 - **No re-buying or re-selling**: Duplicate signals are ignored (set `warn=True` to see warnings)
-- **Multi-position support** - Currently supported with manual trade sizing via `fixed_val` parameter. (set single=False, see:[example](https://github.com/ts-kontakt/antback/blob/main/examples/06_faber_assets_rotation.py). 
+- **Multi-position support** - Currently supported with manual trade sizing via `fixed_val` parameter. (set single=False, [example](https://github.com/ts-kontakt/antback/blob/main/examples/06_faber_assets_rotation.py) ). 
 - **Intraday support**: Available but not extensively tested
 - **Long-only**: Currently, only long positions are possible.
 
