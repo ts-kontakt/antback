@@ -1,4 +1,5 @@
 # Antback
+[![PyPI version](https://img.shields.io/pypi/v/antback.svg)](https://pypi.org/project/antback/)
 
 **Antback: Fast, Transparent, and Debuggable Backtesting**
 
