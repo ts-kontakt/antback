@@ -25,7 +25,7 @@ def test_simple_sma(data, symbol, fast=10, slow=30):
     prices = ab.RollingArray(size=slow)
     cross = ab.new_cross_func()
 
-    for date, price in data.items():
+    for date, price in data:
         prices.append(price)
         price_history = prices.values()
         signal = None  # Reset signal for each iteration
@@ -53,7 +53,7 @@ def test_sma_crossover_talipp(data, symbol, fast=10, slow=30):
     cross = ab.new_cross_func()
     fast_sma, slow_sma = SMA(period=fast), SMA(period=slow)
 
-    for date, price in data.items():  # For dataframe use .to_records()
+    for date, price in data:  # For dataframe use .to_records()
         # Update SMA indicators with latest price
         fast_sma.add(price)
         slow_sma.add(price)
@@ -82,9 +82,10 @@ def main():
     import yfinance as yf
     symbol = "QQQ"
     data = yf.Ticker(symbol).history(period="30y")["Close"]
-
-    test_simple_sma(data, symbol)
-    test_sma_crossover_talipp(data, symbol)
+    
+    data_rows = tuple(zip(data.index, data.values))
+    test_simple_sma(data_rows, symbol)
+    test_sma_crossover_talipp(data_rows, symbol)
 
 
 if __name__ == "__main__":
