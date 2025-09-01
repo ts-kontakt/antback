@@ -107,7 +107,7 @@ elif direction == "down":
     signal = 'sell'
 port.process(signal, symbol, date, price)
 ```
-- **Complex strategies**: Use `port.buy()`, `port.sell()`, `port.update()` 
+- **Directly calling**: Use `port.buy()`, `port.sell()`, `port.update()` 
 ```python
 if direction == "up":
     port.buy(symbol, date, price)
@@ -164,7 +164,7 @@ The returned function compares an **active** and **passive** series value at eac
 
 #### RollingArray
 Fast numpy-based rolling window  (Uses manual slice assignment ([:] = [...])	In-place operation; avoids temporary memory allocations. 
-can be 2 to 10 times faster than np.roll.
+can be 2 to 10 times faster than np.roll. Best suited for numeric data.
 ```python
 prices = ab.RollingArray(window_size=50)
 prices.append(new_price)
@@ -172,7 +172,7 @@ price_history = prices.values()
 ```
 
 #### RollingList  
-Efficient deque-based storage for objects:
+An efficient, deque-based container for arbitrary objects (e.g., candle objects):
 ```python
 prices = ab.RollingList(maxlen=30)
 prices.append(price_data)
@@ -252,6 +252,15 @@ for date, price in data.items():
 Although Antback was not specifically designed for speed, it is **surprisingly fast**. Run the benchmark included with the examples (30-year SPY moving average crossover).
 
 [benchmark](https://github.com/ts-kontakt/antback/blob/main/examples/11_simple_benchmark.py) 
+
+```
+### Disclaimer & Warning
+
+This library is provided for educational and research purposes only. It is not intended for live trading or financial advice.
+
+**Backtesting results are hypothetical and do not guarantee future performance.** Markets are unpredictable, and using this library may result in financial losses.
+
+Use this library at your own risk — the author is not responsible for any losses or damages.
 
 
 ## License
