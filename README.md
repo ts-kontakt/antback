@@ -253,7 +253,6 @@ Although Antback was not specifically designed for speed, it is **surprisingly f
 
 [benchmark](https://github.com/ts-kontakt/antback/blob/main/examples/11_simple_benchmark.py) 
 
-```
 ### Disclaimer & Warning
 
 This library is provided for educational and research purposes only. It is not intended for live trading or financial advice.
