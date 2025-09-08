@@ -30,9 +30,9 @@ TradeData = namedtuple(
     "TradeData",
     [
         "ticker",
-        "buy_date",
+        "open_date",
         "buy_price",
-        "sell_date",
+        "close_date",
         "sell_price",
         "quantity",
         "log_msg",
@@ -43,8 +43,8 @@ TradeResult = namedtuple(
     "TradeResult",
     [
         "ticker",
-        "buy_date",
-        "sell_date",
+        "open_date",
+        "close_date",
         "buy_price",
         "sell_price",
         "quantity",
@@ -80,8 +80,8 @@ def trade_result(trade, brokerage, opened=False):
 
     return TradeResult(
         ticker=trade.ticker,
-        buy_date=trade.buy_date,
-        sell_date=trade.sell_date,
+        open_date=trade.open_date,
+        close_date=trade.close_date,
         buy_price=trade.buy_price,
         sell_price=trade.sell_price,
         quantity=trade.quantity,
@@ -98,6 +98,13 @@ def trade_result(trade, brokerage, opened=False):
 
 
 class Portfolio:
+    
+    __slots__ = (
+        'warn', 'starting_capital', 'cash', 'positions', 'fees', 'max_date',
+        'trades', 'pos_history', 'single', 'events', 'total_fees_paid', 
+        'allow_fractional'
+    )
+    
     """Trading portfolio management class."""
     DEFAULT_PERCENT = 1.0
     MIN_AMOUNT = 500
@@ -129,9 +136,6 @@ class Portfolio:
     def _validate_and_update_date(self, date_obj):
         """Validate date format and update max_date."""
         date_obj = self._normalize_date(date_obj)
-        assert isinstance(date_obj, (date, datetime)), (
-            "date_obj must be date or datetime"
-        )
 
         if self.max_date and date_obj < self.max_date:
             print(f"! Recived date: {date_obj}, self.max_date: {self.max_date}")
@@ -169,7 +173,7 @@ class Portfolio:
                 self.MIN_AMOUNT
             }"
             if self.cash < fixed_val:
-                msg = f"{date_obj}Insufficient cash: {self.cash:.1f} < {fixed_val}"
+                msg = f"{date_obj} - Insufficient cash: {self.cash:.1f} < {fixed_val}"
                 self.events[date_obj].append(msg)
                 raise ValueError(msg)
             available_investment = fixed_val
@@ -186,8 +190,10 @@ class Portfolio:
             if self.allow_fractional
             else int(max_affordable_shares)
         )
-
-        if quantity <= 0.001:
+        
+        if quantity == 0 and not self.allow_fractional:
+            print(f'! 0 quantity, cash: {self.cash}, can set: self.allow_fractional=True')
+        elif quantity <= 0.001:
             msg = f"""! buy quantity <= 0.001 for {ticker} at {price}: need {
                 price * (1 + self.fees)},
              have {available_investment:.2f}"""
@@ -232,7 +238,7 @@ class Portfolio:
                 print(f"Ticker not in portfolio: {ticker}")
             return
 
-        buy_date, quantity, buy_price, last_date, last_price = self.positions.pop(
+        open_date, quantity, buy_price, last_date, last_price = self.positions.pop(
             ticker
         )
 
@@ -241,7 +247,7 @@ class Portfolio:
         net_proceeds = gross_proceeds - fees
 
         self.trades.append(
-            TradeData(ticker, buy_date, buy_price, date_obj, price, quantity, log_msg)
+            TradeData(ticker, open_date, buy_price, date_obj, price, quantity, log_msg)
         )
 
         self.cash += net_proceeds
@@ -263,7 +269,8 @@ class Portfolio:
         """Update price for existing position."""
         date_obj = self._validate_and_update_date(date_obj)
         price = float(price)
-        assert price > 0, "Price must be positive"
+        if price <= 0:
+            raise ValueError("Price must be positive")
 
         if ticker in self.positions:
             self.positions[ticker][-2] = date_obj
@@ -286,7 +293,7 @@ class Portfolio:
         """Save current portfolio state."""
         pos_list = []
         for ticker, (
-            buy_date,
+            open_date,
             qty,
             buy_price,
             last_date,
@@ -304,7 +311,7 @@ class Portfolio:
         total = 0
 
         for ticker, (
-            buy_date,
+            open_date,
             quantity,
             buy_price,
             last_date,
@@ -317,9 +324,9 @@ class Portfolio:
 
             trade_data = TradeData(
                 ticker=ticker,
-                buy_date=buy_date,
+                open_date=open_date,
                 buy_price=buy_price,
-                sell_date=last_date,
+                close_date=last_date,
                 sell_price=last_price,
                 quantity=quantity,
                 log_msg="open",
@@ -327,7 +334,7 @@ class Portfolio:
             open_trades.append(trade_result(trade_data, self.fees, opened=True))
             total += last_price * quantity
 
-        open_trades.sort(key=lambda x: x.buy_date)
+        open_trades.sort(key=lambda x: x.open_date)
         return {"positions_total": total, "open_trades": open_trades}
 
     def current_value(self):
@@ -349,7 +356,7 @@ class Portfolio:
 
         all_trades = closed_trades + open_trades
         df = pd.DataFrame(all_trades, columns=TradeResult._fields)
-        df = df.sort_values("sell_date").reset_index(drop=True)
+        df = df.sort_values("close_date").reset_index(drop=True)
         return df
 
     def has_position(self, ticker):
@@ -357,7 +364,6 @@ class Portfolio:
         return ticker in self.positions
 
     def __repr__(self):
-        """String representation of portfolio."""
         print("---- PORTFOLIO ----")
         print(f"Total Value: {self.current_value():.2f}")
         print(f"Cash: {self.cash:.2f}")
@@ -422,15 +428,15 @@ class Portfolio:
         return gen_equity(self, show=show)
 
     def stats_trades(self):
-        return analyze_trades(self.get_tradelist(), show=False)
+        return utils.analyze_trades(self.get_tradelist(), show=False)
 
     def full_report(self, kind="html", outfile='report.html', title="Portfolio report"):
         if kind == "excel":
-            return excel_report(self, title=title)
-        return html_report(self, outfile=outfile, title=title)
+            return utils.excel_report(self, title=title)
+        return utils.html_report(self, outfile=outfile, title=title)
 
     def basic_report(self, show=True):
-        return summary(self, show=show)
+        return utils.summary(self, show=show)
 
     def base_results(self):
         dates, capital_line = self.equity_line()
@@ -439,64 +445,6 @@ class Portfolio:
         pf_return = pct_diff(self.starting_capital, self.current_value())
         return pf_return, drawdown_val
 
-def summary(portfolio, show=False):
-    """Generate portfolio summary statistics."""
-    if not portfolio.pos_history or not portfolio.trades:
-        print("!No position history available or no trades")
-        return None
-
-    portfolio.verify_consistency()
-
-    start_date = min(portfolio.pos_history.keys())
-    end_date = portfolio.max_date
-    difference = relativedelta(end_date, start_date)
-    months = difference.months + (difference.years * 12)
-    years = max(difference.years + (months / 12.0), 1 / 12.0)
-
-    end_equity = portfolio.current_value()
-
-    net_profit = end_equity - portfolio.starting_capital
-    net_profit_prc = pct_diff(portfolio.starting_capital, end_equity)
-    all_trades = portfolio.get_tradelist()
-    trades_num = len(all_trades)
-
-    if trades_num == 0:
-        if show:
-            print("No trades executed")
-        return None
-
-    profitable = all_trades[all_trades["net_profit"] > 0]
-    prc_profitable = len(profitable) / float(trades_num) * 100
-
-    dates, capital_line = portfolio.equity_line()
-
-    drawdown = utils.get_drawdown(np.array(capital_line))
-    drawdown_val = drawdown["max_dd"]
-    drawdown_start = dates[drawdown["start"]]
-
-    summary = [
-        [
-            "Date Range:",
-            f"{utils.datetime_to_str(start_date)} to {utils.datetime_to_str(end_date)}",
-        ],
-        ["Total Return (%):", f"{net_profit_prc:+.2f}%"],
-        ["Ann. Ret. (%):", f"{utils.calculate_annual_growth_rate(portfolio):.2f}%"],
-        ["Max Drawdown:", f"{drawdown_val:.1f}%"],
-        ["Winning Ratio (%):", f"{prc_profitable:.2f}%"],
-        ["Max. Drawdown Start:", f"{utils.datetime_to_str(drawdown_start)}"],
-        ["Net Profit:", f"{net_profit:,.2f}"],
-        ["Total fees Paid:", f"{portfolio.total_fees_paid:,.2f}"],
-        ["Starting Capital:", f"{portfolio.starting_capital:,.2f}"],
-        ["Ending Capital:", f"{end_equity:,.2f}"],
-        ["Number of Trades:", f"{trades_num:,}"],
-        ["Fees Rate (%):", f"{portfolio.fees * 100:.2f}%"],
-        ["Single Mode Enabled:", f"{portfolio.single}"],
-    ]
-
-    if show:
-        pprint(summary)
-
-    return summary
 
 
 def gen_equity(portfolio, show=False):
@@ -554,351 +502,10 @@ def gen_equity(portfolio, show=False):
             'events': lambda x: ''.join(x)
         })
  
-   
     all_days = pd.date_range(mdf.pydate.min(), mdf.pydate.max(), freq="D")
     ndf = gdf.reindex(all_days).ffill()
     ndf["date_obj"] = ndf["date_obj"].map(lambda x: utils.datetime_to_str(x))
     return ndf
-
-
-def analyze_trades(trades, show=True):
-    """Analyze trade statistics."""
-
-    def remove_outliers(data, threshold=2.0):
-        devs = np.abs(data - np.median(data))
-        med_dev = np.median(devs)
-        scaled = devs / med_dev if med_dev else 0.0
-        return data[scaled < threshold]
-
-    def consecutive_counter(direction="up"):
-        count = 0
-        mult = 1 if direction == "up" else -1
-
-        def counter(value):
-            nonlocal count
-            if value * mult > 0:
-                result = count
-            else:
-                count += 1
-                result = None
-            return result
-
-        return counter
-
-    def get_streaks(df, col):
-        def summarize_group(group):
-            return pd.Series(
-                {
-                    "from": str(group.index.min())[:10],
-                    "to": str(group.index.max())[:10],
-                    "count": group.index.size,
-                }
-            )
-
-        profit_counter = consecutive_counter("up")
-        loss_counter = consecutive_counter("down")
-
-        df["cons_profits"] = df[col].map(profit_counter)
-        df["cons_losses"] = df[col].map(loss_counter)
-
-        try:
-            top_profit = (
-                df.groupby("cons_profits")
-                .apply(summarize_group, include_groups=False)
-                .nlargest(1, "count")
-                .iloc[0]
-                .tolist()
-            )
-
-            top_loss = (
-                df.groupby("cons_losses")
-                .apply(summarize_group, include_groups=False)
-                .nlargest(1, "count")
-                .iloc[0]
-                .tolist()
-            )
-            top_profit[-1] = int(top_profit[-1])
-            top_loss[-1] = int(top_loss[-1])
-            return [
-                f"Longest profit streak: {top_profit[-1]}",
-                f"Longest loss streak: {top_loss[-1]}",
-            ]
-        except (IndexError, KeyError):
-            return ["Longest profit streak: No data", "Longest loss streak: No data"]
-
-    df = trades.copy()
-
-    if len(df) == 0:
-        return ["No trades to analyze"]
-
-    df["buy_date"] = pd.to_datetime(df["buy_date"])
-    df["sell_date"] = pd.to_datetime(df["sell_date"])
-
-    df["duration"] = (df["sell_date"] - df["buy_date"]).dt.total_seconds()
-    avg_duration_seconds = df["duration"].mean()
-
-    if not pd.isna(avg_duration_seconds):
-        minutes, seconds = divmod(avg_duration_seconds, 60)
-        hours, minutes = divmod(minutes, 60)
-        days, hours = divmod(hours, 24)
-
-        duration_parts = []
-        if days >= 1:
-            duration_parts.append(f"{int(days)}d")
-        if hours >= 1:
-            duration_parts.append(f"{int(hours)}h")
-        if minutes >= 1:
-            duration_parts.append(f"{int(minutes)}m")
-        if seconds >= 1 and days < 1:
-            duration_parts.append(f"{int(seconds)}s")
-
-        avg_duration_str = " ".join(duration_parts) if duration_parts else "<1s"
-    else:
-        avg_duration_str = "N/A"
-
-    profits = df[df["net_profit"] > 0.0]["net_profit"]
-    losses = df[df["net_profit"] < 0.0]["net_profit"]
-
-    results = [
-        f"Avg. profit: {profits.mean():.1f}, Avg. loss: {losses.mean():.1f}",
-        f"Avg. trade duration: {avg_duration_str}",
-    ]
-
-    df["date"] = df["buy_date"]
-    df.set_index("date", inplace=True)
-
-    df["wday"] = df.index.map(lambda x: x.strftime("%A"))
-
-    try:
-        results.extend(get_streaks(df, "net_profit"))
-    except Exception as e:
-        print(f"Error calculating streaks: {e}")
-
-    daily = df.groupby(level=0).apply(
-        lambda g: pd.Series(
-            data=[len(g.index), g["net_profit"].sum()], index=["count", "profit"]
-        ),
-        include_groups=False,
-    )
-
-    all_days = pd.date_range(daily.index.min(), daily.index.max(), freq="D")
-    trading_days = len(daily.index)
-    total_days = len(all_days)
-
-    results.extend(
-        [
-            f"Total days: {total_days}, Trading days: {trading_days} ({
-                trading_days /
-                total_days *
-                100:.0f}%)",
-            f"Max trades per day: {
-                daily['count'].max():.1f}",
-        ])
-
-    full_daily = pd.DataFrame(daily.reindex(all_days, fill_value=0))
-    full_daily["week"] = full_daily.index.map(
-        lambda x: f"{x.isocalendar()[0]}_{x.isocalendar()[1]}"
-    )
-
-    weekly = full_daily.groupby("week")["count"].sum()
-    results.append(f"Max trades per week: {weekly.max():.1f}")
-
-    try:
-        weekly_clean = remove_outliers(weekly)
-        results.append(f"Avg trades per week: {weekly_clean.mean():.1f}")
-    except (KeyError, IndexError):
-        print("Warning: Could not calculate avg trades per week")
-
-    full_daily["year"] = full_daily.index.map(lambda x: x.year)
-
-    yearly_trades = full_daily.groupby("year")["count"].sum()
-    yearly_profit = full_daily.groupby("year")["profit"].sum()
-
-    results.extend(
-        [
-            f"Avg trades per year: {yearly_trades.mean():.1f}",
-            f"Avg profit per year: {yearly_profit.mean():.1f}",
-        ]
-    )
-
-    if show:
-        pprint(results)
-
-    return pd.DataFrame(results, columns=["Trading Statistics"])
-
-
-def get_year_stats(portfolio):
-    """Generate yearly statistics."""
-    equity_data = portfolio.get_equity()
-    cleaned_equity_data = equity_data.drop(["date_obj"], axis=1)
-
-    trade_data = portfolio.get_tradelist()
-    trade_data["year"] = trade_data.sell_date.apply(
-        lambda x: str(x)[:4] if pd.notna(x) and len(str(x)) >= 4 else None
-    )
-
-    yearly_capital_returns = (
-        cleaned_equity_data.capital.groupby(pd.Grouper(freq="YE"))
-        .apply(lambda group: pct_diff(group.iloc[0], group.iloc[-1]))
-        .round(2)
-    )
-
-    year_return_pairs = list(
-        zip(
-            [str(date_index)[:4] for date_index in yearly_capital_returns.index],
-            yearly_capital_returns.values,
-        )
-    )
-
-    yearly_trade_profits = trade_data.groupby("year").net_profit.sum().to_dict()
-
-    combined_yearly_stats = []
-    for year_str, capital_return in year_return_pairs:
-        trade_profit = yearly_trade_profits.get(year_str, 0)
-        combined_yearly_stats.append([year_str, capital_return, trade_profit])
-
-    return pd.DataFrame(combined_yearly_stats, columns=["year", "return", "net_return"])
-
-
-def html_report(portfolio, outfile="portfolio-report.html", title="Portfolio report"):
-    import json
-    """Generate HTML report of portfolio performance and trades."""
-    try:
-        import df2tables as df2t
-    except ModuleNotFoundError:
-        print("\nError: df2tables module not found")
-        print('Install with: "pip install df2tables" to generate full HTML report')
-        print("Showing basic report only:")
-        portfolio.basic_report()
-        return
-
-    def to_js_timestamps(dt_index):
-        """Convert DatetimeIndex to JavaScript timestamps."""
-        return (dt_index.astype("int64") // 10**6).tolist()
-
-    def open_file(filename):
-        import subprocess
-
-        if sys.platform.startswith("win"):
-            os.startfile(filename)
-        else:
-            opener = "open" if sys.platform == "darwin" else "xdg-open"
-            subprocess.call([opener, filename])
-
-    # Generate basic metrics
-    metrics_df = pd.DataFrame(
-        portfolio.basic_report(show=False), columns=["Metric", "Value"]
-    )
-
-    def format_spans(value_str):
-        """Apply color formatting to positive/negative values."""
-        if value_str.startswith("+"):
-            return f'<span class="positive">{value_str}</span>'
-        if value_str.startswith("-"):
-            return f'<span class="negative">{value_str}</span>'
-        return value_str
-
-    # Apply color formatting
-    metrics_df["Value"] = metrics_df["Value"].map(lambda v: format_spans(v))
-
-    # CSS class for tables
-    pure_table = "pure-table"
-
-    # Generate trade stats table
-    trade_stats = portfolio.stats_trades().to_html(
-        classes=[pure_table + " f_right"], index=False, border=0
-    )
-
-    # Prepare trades data
-    trades_df = portfolio.get_tradelist()
-    trades_df["buy_date"] = trades_df["buy_date"].map(lambda d: utils.datetime_to_str(d))
-    trades_df["sell_date"] = trades_df["sell_date"].map(lambda d: utils.datetime_to_str(d))
-
-    # Prepare chart data
-    equity_data = portfolio.get_equity().capital
-    chart_x = to_js_timestamps(equity_data.index)
-    chart_y = equity_data.values.tolist()
-
-    # Generate trades table
-    trades_table = df2t.render_inline(
-        trades_df,
-        title="Portfolio Trades",
-        dropdown_select_threshold=7,
-        load_column_control=True,
-        num_html=["net_profit", "profit_pct", "gross_profit"],
-    )
-
-    # Template data
-    data = {
-        "basic_report": metrics_df.reset_index(drop=True)
-        .to_html(
-            index=False,
-            border=0,
-            classes=[pure_table],
-            escape=False,
-        )
-        .replace("<table ", '<table style="float:left;margin-right:2rem;" '),
-        "trades": trades_table,
-        "trades_stats": trade_stats,
-        "real_dates": json.dumps(chart_x) ,
-        "real_values": json.dumps(chart_y),
-        "report_title": title,
-        "generate_jsdata": "// generate_jsdata function",
-    }
-
-    template_file = "antreport_templ.htm"
-    try:
-        # Python 3.9+
-        from importlib import resources
-
-        template_path = str(resources.files("antback").joinpath(template_file))
-    except ImportError:
-        # Fallback for older versions
-        template_path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), template_file
-        )
-
-    write_from_template(template_path, outfile, data)
-    open_file(outfile)
-
-
-def excel_report(portfolio, outfile="portfolio-report.xlsx", title="Porfolio report"):
-    """Generate Excel report of portfolio."""
-
-    try:
-        import xlreport as xl
-    except ModuleNotFoundError:
-        print("\nError: xlreport module not found")
-        print('Install with: "pip install xlreport" to generate Excel report')
-        print("Showing basic report only:")
-        portfolio.basic_report()
-        return
-    excel_file = xl.Exfile(outfile)
-    excel_file.write(
-        portfolio.basic_report(show=False), title=title, worksheet_name="Basic"
-    )
-    excel_file.write(
-        get_year_stats(portfolio).reset_index(drop=True),
-        title="Yearly Performance",
-        worksheet_name="Years",
-    )
-
-    trades_df = portfolio.get_tradelist()
-    trades_df["buy_date"] = trades_df["buy_date"].map(lambda d: utils.datetime_to_str(d))
-    trades_df["sell_date"] = trades_df["sell_date"].map(lambda d: utils.datetime_to_str(d))
-    excel_file.write(trades_df, title="Trade List", worksheet_name="Trades")
-
-    excel_file.write(
-        portfolio.get_equity(), title="Equity Curve", worksheet_name="Equity"
-    )
-
-    excel_file.write(
-        portfolio.stats_trades(), title="Trade Statistics", worksheet_name="Stats"
-    )
-
-    excel_file.add_links()
-    excel_file.save(start=True)
-
 
 def generate_test_data() -> Portfolio:
     import random
