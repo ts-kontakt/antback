@@ -157,8 +157,8 @@ cfd.process("close", symbol, date, price)
 cfd.process(None, symbol, date, price)  # or "update"
 ```
 **Key CFD Features:**
-- **Long and short positions**: Profit from both rising and falling markets
-- **Margin trading**: Trade with leverage while managing margin requirements
+- **Long and short positions**
+- **Margin trading**: backtest with leverage while managing margin requirements
 - **Automatic margin calls**: Portfolio monitors equity levels and triggers warnings
 
 ## Useful functions
