@@ -122,9 +122,44 @@ See [06_simple_2_assets_rotation.py](https://github.com/ts-kontakt/antback/blob/
 ### Important Notes
 - **No re-buying or re-selling**: Duplicate signals are ignored (set `warn=True` to see warnings)
 - **Multi-position support** - Currently supported with manual trade sizing via `fixed_val` parameter. (set single=False, [example](https://github.com/ts-kontakt/antback/blob/main/examples/07_faber_assets_rotation.py) ). 
-- **Intraday support**
 - **Long-only**: Currently, only long positions are possible.
 
+### CFDAccount Class
+
+Trading engine for CFD  and FX trading with margin requirements, leverage, and both long/short positions:
+
+```python
+cfd = ab.CFDAccount(
+    cash=50_000,              # Starting capital (minimum 1,000)
+    margin_requirement=0.1,   # Required margin as fraction (0.1 = 10%)
+    leverage=2,               # Maximum leverage ratio
+    warn=False,               # Show warnings and margin calls
+    allow_fractional=True,    # Allow fractional positions
+    fees=0.00015,            # Trading fees (1.5 bps)
+    margin_call_level=0.5    # Margin call threshold (50% of required margin)
+)
+```
+ [long/short example](https://github.com/ts-kontakt/antback/blob/main/examples/09_intraday_long_short_btc.py)
+
+
+**CFD Trading Patterns:**
+```python
+# Long position
+cfd.process("long", symbol, date, price)
+
+# Short position  
+cfd.process("short", symbol, date, price)
+
+# Close current position
+cfd.process("close", symbol, date, price)
+
+# Update position value
+cfd.process(None, symbol, date, price)  # or "update"
+```
+**Key CFD Features:**
+- **Long and short positions**: Profit from both rising and falling markets
+- **Margin trading**: Trade with leverage while managing margin requirements
+- **Automatic margin calls**: Portfolio monitors equity levels and triggers warnings
 
 ## Useful functions
 ### Cross Function
