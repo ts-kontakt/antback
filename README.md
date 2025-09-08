@@ -99,15 +99,17 @@ port = ab.Portfolio(
 ```
 
 **Trading Patterns:**
-- **Simple strategies**: Use ```port.process()```
+- ```port.process(signal, symbol, date, price)  #signal can be 'buy', 'sell' or 'update'```
+Example:
 ```python
+...
 if direction == "up":
     signal = 'buy'
 elif direction == "down":
     signal = 'sell'
 port.process(signal, symbol, date, price)
 ```
-- **Directly calling**: Use `port.buy()`, `port.sell()`, `port.update()` 
+- **Methods can be called directly**: `port.buy()`, `port.sell()`, `port.update()` 
 ```python
 if direction == "up":
     port.buy(symbol, date, price)
@@ -125,6 +127,17 @@ See [06_simple_2_assets_rotation.py](https://github.com/ts-kontakt/antback/blob/
 
 
 ## Useful functions
+### Cross Function
+
+```new_cross_func()``` returns a stateful crossover detector function that tracks when one time series crosses another.
+
+> **ℹ️ Note:** In most cases, the **active** series is a *shorter time frame* indicator compared to the **passive** series. This means it reacts faster to changes, making crossovers more responsive.
+
+The returned function compares an **active** and **passive** series value at each call and returns:
+- **`up`** when the **active** value moves from below to above the **passive** value
+- **`down`** when the **active** value moves from above to below the **passive** value
+- `None` if there's no crossover or insufficient data
+
 ### Wait Functions - Preventing Lookahead Bias
 
 Example use of a wait function.
@@ -146,17 +159,6 @@ See examples [05_easter_effect_test.py](https://github.com/ts-kontakt/antback/bl
 
 There is also a per-ticker wait version (new_multi_ticker_wait) that creates separate functions for each symbol:
 [wait demo](https://github.com/ts-kontakt/antback/blob/main/examples/12_wait_example.py)
-
-### Cross Function
-
-```new_cross_func()``` returns a stateful crossover detector function that tracks when one time series crosses another.
-
-> **ℹ️ Note:** In most cases, the **active** series is a *shorter time frame* indicator compared to the **passive** series. This means it reacts faster to changes, making crossovers more responsive.
-
-The returned function compares an **active** and **passive** series value at each call and returns:
-- **`up`** when the **active** value moves from below to above the **passive** value
-- **`down`** when the **active** value moves from above to below the **passive** value
-- `None` if there's no crossover or insufficient data
 
 
 
