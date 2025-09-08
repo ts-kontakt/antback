@@ -81,7 +81,7 @@ port.full_report('excel', outfile=f'{descr}_report.xlsx', title=descr)
 ```
 See detailed [excel report](https://github.com/ts-kontakt/antback/blob/main/examples/portfolio-report.xlsx) generated with above example.
 
-> **Note**: In fact, the average lengths in this case are slightly optimized; see: [examples/07_optimization.py](https://github.com/ts-kontakt/antback/blob/main/examples/07_optimization.py). The results may be even better if trailing ATR stop is used ([examples/04_atr_stop.py](https://github.com/ts-kontakt/antback/blob/main/examples/04_atr_stop.py)) for the sell signal instead of the averages.
+> **Note**: In fact, the average lengths in this case are slightly optimized; see: [examples/08_optimization.py](https://github.com/ts-kontakt/antback/blob/main/examples/07_optimization.py). The results may be even better if trailing ATR stop is used ([examples/04_atr_stop.py](https://github.com/ts-kontakt/antback/blob/main/examples/04_atr_stop.py)) for the sell signal instead of the averages.
 
 ## Core Components
 ### Portfolio Class
@@ -120,7 +120,7 @@ See [06_simple_2_assets_rotation.py](https://github.com/ts-kontakt/antback/blob/
 ### Important Notes
 - **No re-buying or re-selling**: Duplicate signals are ignored (set `warn=True` to see warnings)
 - **Multi-position support** - Currently supported with manual trade sizing via `fixed_val` parameter. (set single=False, [example](https://github.com/ts-kontakt/antback/blob/main/examples/06_faber_assets_rotation.py) ). 
-- **Intraday support**: Available but not extensively tested
+- **Intraday support**
 - **Long-only**: Currently, only long positions are possible.
 
 
@@ -197,10 +197,10 @@ It compares a **3-month SMA** with a **10-month SMA** for multiple assets and ro
 - **Multi-asset support** (e.g., SPY, GLD, TLT).
 - Uses `ab.NamedRollingLists` to efficiently maintain rolling daily prices for SMA calculation.
 
-💡*Puzzle for the reader*: Try adding Bitcoin to the mix by including `'BTC-USD'` in the ticker list… **see what happens**.
+*Puzzle for the reader*: Try adding Bitcoin to the mix by including `'BTC-USD'` in the ticker list… **see what happens**.
 
 See the full script in  
-[06_faber_assets_rotation.py](https://github.com/ts-kontakt/antback/blob/main/examples/06_faber_assets_rotation.py).  
+[07_faber_assets_rotation.py](https://github.com/ts-kontakt/antback/blob/main/examples/07_faber_assets_rotation.py).  
 
 
 ### Machine Learning Trading Strategy Example
@@ -249,9 +249,10 @@ for date, price in data.items():
 ```
 ### Performance
 
-Although Antback was not specifically designed for speed, it is **surprisingly fast**. Run the benchmark included with the examples (30-year SPY moving average crossover).
+Although Antback was not specifically designed for speed, it is **surprisingly fast**. Run the benchmark included with the examples (30-year SPY moving average crossover and BTC-USD intraday 10min).
 
-[benchmark](https://github.com/ts-kontakt/antback/blob/main/examples/11_simple_benchmark.py) 
+- [benchmark EOD](https://github.com/ts-kontakt/antback/blob/main/examples/10_simple_benchmark.py) 
+- [benchmark intraday](https://github.com/ts-kontakt/antback/blob/main/examples/11_intraday_benchmark_vectorbt.py) 
 
 ### Disclaimer & Warning
 
