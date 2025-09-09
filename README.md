@@ -112,14 +112,8 @@ elif direction == "down":
     signal = 'sell'
 port.process(signal, symbol, date, price)
 ```
-- **Methods can be called directly**: `port.buy()`, `port.sell()`, `port.update()` 
-```python
-if direction == "up":
-    port.buy(symbol, date, price)
-elif direction == "down":
-    port.sell(symbol, date, price)
-port.update(symbol, date, price)
-  ```
+Methods can be also called directly: `port.buy()`, `port.sell()`, `port.update()` 
+
 See [06_simple_2_assets_rotation.py](https://github.com/ts-kontakt/antback/blob/main/examples/06_simple_2_assets_rotation.py).
 
 **Important Notes**
@@ -221,7 +215,7 @@ recent_prices = prices.values()
 ```
 #### Multi-ticker strategies
 
-For more advanced multi-ticker strategies or those using machine learning, it's often necessary to track more than a few dozen rolling features. The ```NamedRollingArrays``` and ```PerTickerNamedRollingArrays``` classes are available for this purpose ([rolling demo](https://github.com/ts-kontakt/antback/blob/main/examples/13_rolling_demo.py)).
+For more advanced multi-ticker strategies or those using machine learning, it's often necessary to track more than a few dozen rolling features. The ```NamedRollingArrays``` and ```PerTickerNamedRollingArrays``` classes are available for this purpose ([rolling demo](https://github.com/ts-kontakt/antback/blob/main/examples/13_demo_rolling.py)).
 
 ## More Examples & Use Cases
 Explore the [examples](examples/) to see Antback in action—from basic strategies to  multi-asset rotations.
@@ -245,14 +239,6 @@ for date, price in data.items():
 ### Performance
 
 Although Antback was not specifically designed for speed, it is **surprisingly fast**. Run the benchmark included with the examples (30-year SPY moving average crossover and BTC-USD intraday 10min).
-
-**Tips for DataFrame Iteration**
-- For simple strategies (e.g., only `datetime` and `price` columns), convert data to tuples first: tuple(zip(data.index, data.values))
-
-For multiple fields (e.g., OHLC data or multiple tickers), especially with intraday or large time-indexed datasets,
-use `itertuples()` or `.to_numpy()`
-
-**Avoid `iterrows()`**
 
 - [benchmark EOD](https://github.com/ts-kontakt/antback/blob/main/examples/10_simple_benchmark.py) 
 - [benchmark intraday](https://github.com/ts-kontakt/antback/blob/main/examples/11_intraday_benchmark_vectorbt.py)
