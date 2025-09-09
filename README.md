@@ -37,14 +37,15 @@ The demo feature generates random trades of several stocks at random prices and 
 
 ```python
 import numpy as np
+import yfinance as yf
+
 import antback as ab
 
-import yfinance as yf
 symbol = "QQQ"
-data = yf.Ticker(symbol).history(period='10y')
+data = yf.Ticker(symbol).history(period="10y")
 
 port = ab.Portfolio(10_000, single=True)
-fast, slow  = 10, 30
+past, slow = 10, 30
 
 prices = ab.RollingList(maxlen=slow)
 cross = ab.new_cross_func()
@@ -52,10 +53,10 @@ cross = ab.new_cross_func()
 for date, price in data["Close"].items():
     prices.append(price)
     price_history = prices.values()
-    signal = "update"  # Reset signal - just update portfolio position 
-    
+    signal = "update"  # Reset signal - just update portfolio position
+
     if len(price_history) >= slow:
-        fast_ma, slow_ma = np.mean(price_history[-fast:]), np.mean(price_history[-slow:])
+        fast_ma, slow_ma = np.mean(price_history[-past:]), np.mean(price_history[-slow:])
         direction = cross(fast_ma, slow_ma)  # active crosses  passive
         if direction == "up":
             signal = "buy"
@@ -65,8 +66,7 @@ for date, price in data["Close"].items():
 
 port.basic_report(show=True)
 
-descr = f"Simple SMA Crossover on {symbol}"
-port.full_report("html", outfile=f"{descr}_report.html", title=descr)
+port.full_report(outfile=f"Porfolio_report.html", title=f"SMA Crossover on {symbol}")
 ```
 ### Html report screenshot
 ![Report](https://github.com/ts-kontakt/antback/blob/main/antback-report.png?raw=true)
@@ -81,7 +81,10 @@ port.full_report('excel', outfile=f'{descr}_report.xlsx', title=descr)
 ```
 See detailed [excel report](https://github.com/ts-kontakt/antback/blob/main/examples/portfolio-report.xlsx) generated with above example.
 
-> **Note**: In fact, the average lengths in this case are slightly optimized; see: [examples/08_optimization.py](https://github.com/ts-kontakt/antback/blob/main/examples/07_optimization.py). The results may be even better if trailing ATR stop is used ([examples/04_atr_stop.py](https://github.com/ts-kontakt/antback/blob/main/examples/04_atr_stop.py)) for the sell signal instead of the averages.
+> **Note**: The implementation above is not the most efficient because ```np.mean``` is called separately for each new row of data. See alternative, faster versions in: [examples/10_simple_benchmark.py](https://github.com/ts-kontakt/antback/blob/main/examples/10_simple_benchmark.py)
+>
+> **Optimization**: In fact, the average lengths in this case are slightly optimized; see: [examples/08_optimization.py](https://github.com/ts-kontakt/antback/blob/main/examples/07_optimization.py).
+> The results may be even better if trailing ATR stop is used ([examples/04_atr_stop.py](https://github.com/ts-kontakt/antback/blob/main/examples/04_atr_stop.py)) for the sell signal instead of the averages.
 
 ## Core Components
 ### Portfolio Class
@@ -158,6 +161,7 @@ cfd.process(None, symbol, date, price)  # or "update"
 ```
 **Key CFD Features:**
 - **Long and short positions**
+- **Only single position at time is supported**
 - **Margin trading**: backtest with leverage while managing margin requirements
 - **Automatic margin calls**: Portfolio monitors equity levels and triggers warnings
 
@@ -222,55 +226,9 @@ For more advanced multi-ticker strategies or those using machine learning, it's 
 ## More Examples & Use Cases
 Explore the [examples](examples/) to see Antback in action—from basic strategies to  multi-asset rotations.
 
-### Mebane Faber–Style Asset Rotation (10-Month SMA)
-
-This example implements a variation of the tactical asset allocation strategy popularized by **Mebane Faber** in *The Ivy Portfolio*.  
-It compares a **3-month SMA** with a **10-month SMA** for multiple assets and rotates into assets whose short-term trend is above the long-term trend, rebalancing at **month-end only**.
-
-**Key points in this implementation:**
-- **No resampling to monthly closes**: The 10-month SMA is calculated using **daily data**, but trading decisions are only made on **month-end dates** obtained from  
-  `antback.get_monthly_points()`. This avoids distortions caused by monthly bar aggregation.
-- **Equal-weight allocation** to selected assets.
-- **Multi-asset support** (e.g., SPY, GLD, TLT).
-- Uses `ab.NamedRollingLists` to efficiently maintain rolling daily prices for SMA calculation.
-
-*Puzzle for the reader*: Try adding Bitcoin to the mix by including `'BTC-USD'` in the ticker list… **see what happens**.
-
-See the full script in  
-[07_faber_assets_rotation.py](https://github.com/ts-kontakt/antback/blob/main/examples/07_faber_assets_rotation.py).  
-
-
-### Machine Learning Trading Strategy Example
-
-This example demonstrates how to implement a machine learning-based trading strategy using Antback with technical features and scikit-learn classifiers. Uses **NamedRollingLists** maintains multiple synchronized rolling windows optimized for high-frequency feature updates.
-
-#### Feature Engineering
-- Market timing features (day of month, weekday)
-- Price action metrics (gaps, drawdowns)
-- Technical indicators (RSI, ROC)
-- Candle patterns and characteristics
-
-Rolling Window Calculations: feature calculations, such as get_indicator_value_and_score, use data only from the past within a defined rolling window. 
-
-#### Use of Transformers:
-Use fit_transform on the training data and only transform on the test data. This ensures that information from the test set (like its data distribution for binning or categories for encoding) does not "leak" into the transformation process.
-- Training: ```discretizer.fit_transform(...)```
-- Testing: ```discretizer.transform(...)```
-
-#### Training Process
-- Calculates forward returns as targets
-- Encodes categorical features
-- Discretizes numerical features
-- Trains the classifier
-#### To-do
-Implement Walk-Forward Optimization: Instead of a single train/test split, use a walk-forward approach. 
-
-See complete example: [14_machine_learning.py](https://github.com/ts-kontakt/antback/blob/main/examples/14_machine_learning.py)
-
-
 ### Performance & Technical Indicators
 
-Antback does not include its own indicators (except for a useful ATR stop line), but you can use any technical analysis (TA) library. Antback is most suitable with event-driven technical indicators. For optimal performance, [talipp](https://github.com/nardew/talipp) indicators, which is designed for streaming data may be used:
+Antback does not include its own indicators (except for clousure based SMA and ATR functions), but you can use any technical analysis (TA) library. Antback is most suitable with event-driven technical indicators. For optimal performance, [talipp](https://github.com/nardew/talipp) indicators, which is designed for streaming data may be used:
 
 ```python
 from talipp.indicators import SMA
@@ -288,8 +246,16 @@ for date, price in data.items():
 
 Although Antback was not specifically designed for speed, it is **surprisingly fast**. Run the benchmark included with the examples (30-year SPY moving average crossover and BTC-USD intraday 10min).
 
+**Tips for DataFrame Iteration**
+- For simple strategies (e.g., only `datetime` and `price` columns), convert data to tuples first: tuple(zip(data.index, data.values))
+
+For multiple fields (e.g., OHLC data or multiple tickers), especially with intraday or large time-indexed datasets,
+use `itertuples()` or `.to_numpy()`
+
+**Avoid `iterrows()`**
+
 - [benchmark EOD](https://github.com/ts-kontakt/antback/blob/main/examples/10_simple_benchmark.py) 
-- [benchmark intraday](https://github.com/ts-kontakt/antback/blob/main/examples/11_intraday_benchmark_vectorbt.py) 
+- [benchmark intraday](https://github.com/ts-kontakt/antback/blob/main/examples/11_intraday_benchmark_vectorbt.py)
 
 ### Disclaimer & Warning
 
