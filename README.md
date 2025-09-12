@@ -18,18 +18,17 @@ A lightweight, event-loop-style backtest engine that allows a function-driven im
 
 A key feature is the generation of interactive HTML reports, which allow for easy inspection of trades. The lightweight [df2tables](https://github.com/ts-kontakt/df2tables) module is used for this purpose. For Excel reports, [xlreport](https://github.com/ts-kontakt/xlreport) is used.
 
-
+So the full install command is:
 ```bash
 pip install antback df2tables xlreport
 ```
-Core functionality requires only `numpy` and `pandas` (pandas for reporting only). 
 
 ### Demo
 ```python
 import antback as ab
 ab.demo()
 ```
-The demo feature generates random trades of several stocks at random prices and generates an interactive report. A profit is slightly more likely than a loss—it's a demo, after all.
+The demo feature generates random trades of several stocks at random prices and generates an interactive report. A profit is slightly more likely than a loss - *it's a demo, after all*.
 
 ## Quick Start
 
@@ -68,10 +67,12 @@ port.basic_report(show=True)
 
 port.full_report(outfile=f"Porfolio_report.html", title=f"SMA Crossover on {symbol}")
 ```
-### Html report screenshot
+### Full report screenshot (html)
+*Excel version is also avaliable*
+
 ![Report](https://github.com/ts-kontakt/antback/blob/main/antback-report.png?raw=true)
 
-### Interactive Filtering trades  
+**Interactive filtering trades** (default html report)
 
 <img src="https://github.com/ts-kontakt/antback/blob/main/filter_trades.gif?raw=true" alt="Interactive trade filtering demo" width="600" height="auto">
 
@@ -84,7 +85,7 @@ See detailed [excel report](https://github.com/ts-kontakt/antback/blob/main/exam
 > **Note**: The implementation above is not the most efficient because ```np.mean``` is called separately for each new row of data. See alternative, faster versions in: [examples/10_simple_benchmark.py](https://github.com/ts-kontakt/antback/blob/main/examples/10_simple_benchmark.py)
 >
 > **Optimization**: In fact, the average lengths in this case are slightly optimized; see: [examples/08_optimization.py](https://github.com/ts-kontakt/antback/blob/main/examples/07_optimization.py).
-> The results may be even better if trailing ATR stop is used ([examples/04_atr_stop.py](https://github.com/ts-kontakt/antback/blob/main/examples/04_atr_stop.py)) for the sell signal instead of the averages.
+> The results may be even better if [trailing ATR stop](https://github.com/ts-kontakt/antback/blob/main/examples/04_atr_stop.py) is used for the sell signal instead of the averages.
 
 ## Core Components
 ### Portfolio Class
@@ -93,16 +94,19 @@ The main trading engine that handles position management, trade execution, and p
 
 ```python
 port = ab.Portfolio(
-    cash=10_000,              # Starting capital (minimum 10,000)
-    single=True,              # Single asset mode
-    warn=False,               # Show warnings
-    allow_fractional=False,   # Allow fractional shares
-    fees=0.0015              # Trading fees (0.15%)
+    cash=10_000,              
+    single=True,     # Single asset mode - default
+    warn=False,               
+    allow_fractional=False,   
+    fees=0.0015              
 )
 ```
 
 **Trading Patterns:**
-- ```port.process(signal, symbol, date, price)  #signal can be 'buy', 'sell' or 'update'```
+- ```port.process(signal, symbol, date, price)```
+
+Signal can be `buy`, `sell` or `None` (also explicit `update`)
+
 Example:
 ```python
 ...
@@ -127,16 +131,16 @@ Trading engine for CFD  and FX trading with margin requirements, leverage, and b
 
 ```python
 cfd = ab.CFDAccount(
-    cash=50_000,              # Starting capital (minimum 1,000)
+    cash=50_000,              
     margin_requirement=0.1,   # Required margin as fraction (0.1 = 10%)
-    leverage=2,               # Maximum leverage ratio
-    warn=False,               # Show warnings and margin calls
-    allow_fractional=True,    # Allow fractional positions
-    fees=0.00015,            # Trading fees (1.5 bps)
-    margin_call_level=0.5    # Margin call threshold (50% of required margin)
+    leverage=2,               
+    warn=False,               
+    allow_fractional=True,    
+    fees=0.00015,           
+    margin_call_level=0.5 
 )
 ```
- [long/short example](https://github.com/ts-kontakt/antback/blob/main/examples/09_intraday_long_short_btc.py)
+ [long/short example - intraday BTC 15min](https://github.com/ts-kontakt/antback/blob/main/examples/09_intraday_long_short_btc.py)
 
 
 **CFD Trading Patterns:**
@@ -157,7 +161,9 @@ cfd.process(None, symbol, date, price)  # or "update"
 - **Long and short positions**
 - **Only single position at time is supported**
 - **Margin trading**: backtest with leverage while managing margin requirements
-- **Automatic margin calls**: Portfolio monitors equity levels and triggers warnings
+
+## More Examples & Use Cases
+Explore the [examples](examples/) to see Antback in action - from basic strategies to  multi-asset rotations.
 
 ## Useful functions
 ### Cross Function
@@ -194,7 +200,6 @@ There is also a per-ticker wait version (new_multi_ticker_wait) that creates sep
 [wait demo](https://github.com/ts-kontakt/antback/blob/main/examples/12_wait_example.py)
 
 
-
 ### Optimized Data Structures
 
 #### RollingArray
@@ -217,8 +222,6 @@ recent_prices = prices.values()
 
 For more advanced multi-ticker strategies or those using machine learning, it's often necessary to track more than a few dozen rolling features. The ```NamedRollingArrays``` and ```PerTickerNamedRollingArrays``` classes are available for this purpose ([rolling demo](https://github.com/ts-kontakt/antback/blob/main/examples/13_demo_rolling.py)).
 
-## More Examples & Use Cases
-Explore the [examples](examples/) to see Antback in action—from basic strategies to  multi-asset rotations.
 
 ### Performance & Technical Indicators
 
