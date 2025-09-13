@@ -44,7 +44,7 @@ symbol = "QQQ"
 data = yf.Ticker(symbol).history(period="10y")
 
 port = ab.Portfolio(10_000, single=True)
-past, slow = 10, 30
+fast, slow = 10, 30
 
 prices = ab.RollingList(maxlen=slow)
 cross = ab.new_cross_func()
@@ -55,7 +55,8 @@ for date, price in data["Close"].items():
     signal = "update"  # Reset signal - just update portfolio position
 
     if len(price_history) >= slow:
-        fast_ma, slow_ma = np.mean(price_history[-past:]), np.mean(price_history[-slow:])
+        fast_ma = np.mean(price_history[-fast:]) 
+        slow_ma = np.mean(price_history[-slow:])
         direction = cross(fast_ma, slow_ma)  # active crosses  passive
         if direction == "up":
             signal = "buy"
