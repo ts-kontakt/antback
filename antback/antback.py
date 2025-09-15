@@ -1,21 +1,16 @@
 #!/usr/bin/python
 # coding=utf-8
-import os
-import sys
 from collections import defaultdict, namedtuple
 from datetime import date, datetime, timedelta
 from pprint import pprint
 
 import numpy as np
 import pandas as pd
-from dateutil.relativedelta import relativedelta
 
 try:
     from . import utils
-    from .comnt import write_from_template
 except ImportError:
     import utils
-    from comnt import write_from_template
 
 
 def pct_diff(prev, today):
@@ -96,18 +91,26 @@ def trade_result(trade, brokerage, opened=False):
     )
 
 
-
 class Portfolio:
-    
     __slots__ = (
-        'warn', 'starting_capital', 'cash', 'positions', 'fees', 'max_date',
-        'trades', 'pos_history', 'single', 'events', 'total_fees_paid', 
-        'allow_fractional'
+        "warn",
+        "starting_capital",
+        "cash",
+        "positions",
+        "fees",
+        "max_date",
+        "trades",
+        "pos_history",
+        "single",
+        "events",
+        "total_fees_paid",
+        "allow_fractional",
     )
-    
+
     """Trading portfolio management class."""
     DEFAULT_PERCENT = 1.0
     MIN_AMOUNT = 500
+
     def __init__(
         self, cash, single=True, warn=False, allow_fractional=False, fees=0.0015
     ):
@@ -154,8 +157,10 @@ class Portfolio:
                     "For multi ticker portfolio fixed_val buy value is expected"
                 )
 
+        if price <= 0 or pd.isna(price):
+            raise ValueError("Price must be positive")
+
         date_obj = self._validate_and_update_date(date_obj)
-        price = float(price)
 
         if self.single and self.positions and ticker not in self.positions:
             raise Exception(f"Single mode - can't add new ticker: {ticker}")
@@ -178,7 +183,7 @@ class Portfolio:
                 raise ValueError(msg)
             available_investment = fixed_val
         else:
-            available_investment = self.cash * self.DEFAULT_PERCENT #1.0
+            available_investment = self.cash * self.DEFAULT_PERCENT  # 1.0
 
         buffer_factor = 0.99999  # Prevent error comparing floats
         max_affordable_shares = (available_investment * buffer_factor) / (
@@ -190,12 +195,15 @@ class Portfolio:
             if self.allow_fractional
             else int(max_affordable_shares)
         )
-        
+
         if quantity == 0 and not self.allow_fractional:
-            print(f'! 0 quantity, cash: {self.cash}, can set: self.allow_fractional=True')
+            print(
+                f"! 0 quantity, cash: {self.cash}, can set: self.allow_fractional=True"
+            )
         elif quantity <= 0.001:
             msg = f"""! buy quantity <= 0.001 for {ticker} at {price}: need {
-                price * (1 + self.fees)},
+                price * (1 + self.fees)
+            },
              have {available_investment:.2f}"""
             self.events[date_obj].append(msg)
             if self.warn:
@@ -268,7 +276,6 @@ class Portfolio:
     def update(self, ticker, date_obj, price):
         """Update price for existing position."""
         date_obj = self._validate_and_update_date(date_obj)
-        price = float(price)
         if price <= 0:
             raise ValueError("Price must be positive")
 
@@ -345,8 +352,7 @@ class Portfolio:
             total += positions_value
             if self.warn:
                 print(f"""Cash: {self.cash:.2f}, Positions: {positions_value:.2f}, 
-                Total: {total:.2f}"""
-                )
+                Total: {total:.2f}""")
         return total
 
     def get_tradelist(self):
@@ -403,7 +409,6 @@ class Portfolio:
                 print(f"Difference: {difference:.2f}")
                 return False
 
-        self.starting_capital
         current_total = self.current_value()
 
         net_trading_profit = sum(
@@ -415,7 +420,7 @@ class Portfolio:
         )
 
         if self.warn:
-            print(f"Capital verification:")
+            print("Capital verification:")
             print(f"  Starting: {self.starting_capital:.2f}")
             print(f"  Current total: {current_total:.2f}")
             print(f"  Closed trades profit: {net_trading_profit:.2f}")
@@ -430,7 +435,7 @@ class Portfolio:
     def stats_trades(self):
         return utils.analyze_trades(self.get_tradelist(), show=False)
 
-    def full_report(self, kind="html", outfile='report.html', title="Portfolio report"):
+    def full_report(self, kind="html", outfile="report.html", title="Portfolio report"):
         if kind == "excel":
             return utils.excel_report(self, title=title)
         return utils.html_report(self, outfile=outfile, title=title)
@@ -444,7 +449,6 @@ class Portfolio:
         drawdown_val = drawdown["max_dd"]
         pf_return = pct_diff(self.starting_capital, self.current_value())
         return pf_return, drawdown_val
-
 
 
 def gen_equity(portfolio, show=False):
@@ -461,7 +465,8 @@ def gen_equity(portfolio, show=False):
 
             if prev_capital > 0 and abs(capital - prev_capital) > prev_capital * 0.5:
                 print(
-                    f"!Warning: Large capital jump on {date_obj}: {prev_capital} -> {capital}")
+                    f"!Warning: Large capital jump on {date_obj}: {prev_capital} -> {capital}"
+                )
 
             outlist.append(
                 (
@@ -488,26 +493,29 @@ def gen_equity(portfolio, show=False):
         return pd.DataFrame()
 
     mdf = pd.DataFrame(equity, columns=["date_obj", "capital", "cash", "positions"])
-    
-    events_dict = {utils.datetime_to_str(k) : v for k,v in portfolio.events.items()}
+
+    events_dict = {utils.datetime_to_str(k): v for k, v in portfolio.events.items()}
     mdf_py_dates = [utils.datetime_to_str(x) for x in mdf.date_obj.values]
-    mdf["events"] = [str(events_dict.get(x, '')) for x in mdf_py_dates]
+    mdf["events"] = [str(events_dict.get(x, "")) for x in mdf_py_dates]
 
     mdf["pydate"] = mdf.date_obj.map(lambda x: pd.to_datetime(x).date())
-    gdf = mdf.groupby(["pydate"]).agg({
-            'date_obj': 'last',  
-            'capital': 'last', 
-            'cash': 'last',  
-             'positions': 'last',  
-            'events': lambda x: ''.join(x)
-        })
- 
+    gdf = mdf.groupby(["pydate"]).agg(
+        {
+            "date_obj": "last",
+            "capital": "last",
+            "cash": "last",
+            "positions": "last",
+            "events": lambda x: "".join(x),
+        }
+    )
+
     all_days = pd.date_range(mdf.pydate.min(), mdf.pydate.max(), freq="D")
     ndf = gdf.reindex(all_days).ffill()
-    ndf["date_obj"] = ndf["date_obj"].map(lambda x: utils.datetime_to_str(x))
+    ndf["date_obj"] = ndf["date_obj"].map(utils.datetime_to_str)
     return ndf
 
-def generate_test_data() -> Portfolio:
+
+def generate_test_data():
     import random
     from datetime import time
     from random import randint
@@ -633,11 +641,13 @@ def generate_test_data() -> Portfolio:
     print(f"Last operation time: {last_op_time}")
     return testp
 
+
 def demo():
-    test_pf  = generate_test_data()
+    test_pf = generate_test_data()
     print(test_pf.basic_report())
     test_pf.full_report("html")
-    test_pf.full_report('excel')
+    test_pf.full_report("excel")
+
 
 if __name__ == "__main__":
     demo()

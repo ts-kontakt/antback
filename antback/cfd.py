@@ -156,8 +156,7 @@ class CFDAccount:
         return pd.to_datetime(date_obj)
 
     def _validate_and_update_date(self, date_obj):
-        # assert isinstance(date_obj, (date, datetime)
-                          # ), ("date_obj must be date or datetime use pd.to_datetime(date_obj)")
+        assert isinstance(date_obj, (date, datetime))
 
         if self.max_date and date_obj < self.max_date:
             print(f"! Received date: {date_obj}, self.max_date: {self.max_date}")
@@ -352,7 +351,6 @@ class CFDAccount:
     def update(self, ticker, date_obj, price):
         """Update position's current price and check for margin calls."""
         date_obj = self._validate_and_update_date(date_obj)
-        price = float(price)
         if price <= 0:
             raise ValueError("Price must be positive")
 
@@ -595,7 +593,7 @@ class CFDAccount:
                 open_positions_profit = gross_profit - fees
 
         if self.warn:
-            print(f"Capital verification:")
+            print("Capital verification:")
             print(f"  Starting: {self.starting_capital:.2f}")
             print(f"  Current total: {current_total:.2f}")
             print(f"  Closed trades profit: {net_trading_profit:.2f}")

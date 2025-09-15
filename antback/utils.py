@@ -267,7 +267,7 @@ def new_cross_func():
         current_state = 1 if active > passive else -1 if active < passive else None
 
         last_state = prev_state
-        prev_state = current_state 
+        prev_state = current_state
 
         # A cross occurs only if the last state and current state are valid
         # (not None) and different from each other.
@@ -302,8 +302,7 @@ def new_wait_n_bars(n):
         if bar is None:
             raise AssertionError("Must provide either bar argument or start=True")
 
-        assert isinstance(
-            bar, (dtm.date, dtm.datetime)), ("bar must be a datetime object")
+        assert isinstance(bar, (dtm.date, dtm.datetime)), ("bar must be a datetime object")
 
         if prev_bar is not None:
             assert bar > prev_bar, "New bar must be greater than previous bar"
@@ -455,42 +454,72 @@ def create_multi_atr_func(atr_period=14, multiplier=3):
     return compute_atr
 
 
-def create_sma_func(period):
+def create_sma_func_p(period):
     """
     Creates a universal SMA calculator that gracefully handles None,
     np.nan, pd.NA, and other missing value representations.
     """
     data_window = deque(maxlen=period)
     current_sum = 0.0
-    last_sma = None 
+    last_sma = None
 
     def calculate_sma(new_value):
         nonlocal current_sum, last_sma
-        
-        if (new_value != new_value): #  if math.isnan(new_value):
-        # if pd.isna(new_value):
+
+        if (new_value != new_value):  #  if math.isnan(new_value):
+            # if pd.isna(new_value):
             return last_sma
 
         if len(data_window) == period:
             oldest_value = data_window[0]
             current_sum -= oldest_value
-        
+
         data_window.append(new_value)
         current_sum += new_value
-        
+
         if len(data_window) == period:
             current_sma = current_sum / period
             last_sma = current_sma
             return current_sma
-        else:
-            return None
+        return None
 
     return calculate_sma
 
 
+def create_sma_func(period):
+    """
+    Version using a counter to track data points instead of length checks.
+    """
+    data_window = deque(maxlen=period)
+    current_sum = 0.0
+    last_sma = None
+    count = 0  # Track number of data points
 
+    def calculate_sma(new_value):
+        nonlocal current_sum, last_sma, count
 
+        if new_value != new_value:  # NaN check
+            return last_sma
 
+        # Remove oldest value if window is full
+        if count == period:
+            oldest_value = data_window[0]
+            current_sum -= oldest_value
+        else:
+            count += 1
+
+        # Add new value
+        data_window.append(new_value)
+        current_sum += new_value
+
+        if count == period:
+            current_sma = current_sum / period
+            last_sma = current_sma
+            return current_sma
+
+        return None
+
+    return calculate_sma
 
 
 def get_pre_dates_for_targets(df, target_dates, days_before=1):
@@ -547,7 +576,7 @@ def get_orders(port):
     return orders.fillna(False)
 
 
-def calculate_annual_growth_rate(portfolio) -> float:
+def calculate_annual_growth_rate(portfolio):
     """
     Calculate the annualized growth rate percentage using compound annual growth rate (CAGR).
     Args:
@@ -570,7 +599,6 @@ def calculate_annual_growth_rate(portfolio) -> float:
         raise ValueError("Portfolio missing starting_capital")
     if not callable(getattr(portfolio, 'current_value', None)):
         raise ValueError("Portfolio must have current_value() method")
-
 
     start_date = min(portfolio.pos_history.keys())
     end_date = portfolio.max_date
@@ -614,8 +642,7 @@ def calculate_annual_growth_rate(portfolio) -> float:
 def summary(portfolio, show=False):
     """Generate portfolio summary statistics."""
     if not portfolio.pos_history or not portfolio.trades:
-        print("!No position history available or no trades")
-        return None
+        raise AssertionError("!No position history available or no trades")
 
     portfolio.verify_consistency()
 
@@ -623,7 +650,7 @@ def summary(portfolio, show=False):
     end_date = portfolio.max_date
     difference = relativedelta(end_date, start_date)
     months = difference.months + (difference.years * 12)
-    years = max(difference.years + (months / 12.0), 1 / 12.0)
+    # years = max(difference.years + (months / 12.0), 1 / 12.0)
 
     end_equity = portfolio.current_value()
 
@@ -646,7 +673,7 @@ def summary(portfolio, show=False):
     drawdown_val = drawdown["max_dd"]
     drawdown_start = dates[drawdown["start"]]
 
-    summary = [
+    summ_list = [
         [
             "Date Range:",
             f"{datetime_to_str(start_date)} to {datetime_to_str(end_date)}",
@@ -664,17 +691,17 @@ def summary(portfolio, show=False):
         ["Fees Rate (%):", f"{portfolio.fees * 100:.2f}%"],
     ]
     if hasattr(portfolio, 'leverage'):
-        summary.append(["Leverage:", f"{portfolio.leverage}"])
+        summ_list.append(["Leverage:", f"{portfolio.leverage}"])
     if hasattr(portfolio, 'single'):
-        summary.append(["Single Mode Enabled:", f"{portfolio.single}"])
+        summ_list.append(["Single Mode Enabled:", f"{portfolio.single}"])
 
     if show:
-        pprint(summary)
+        pprint(summ_list)
 
-    return summary
+    return summ_list
 
 
-def remove_outliers(series: pd.Series, threshold: float = 2.0) -> pd.Series:
+def remove_outliers(series: pd.Series, threshold: float = 2.0):
     """Remove outliers using Median Absolute Deviation."""
     deviations = np.abs(series - np.median(series))
     med_dev = np.median(deviations)
@@ -684,7 +711,7 @@ def remove_outliers(series: pd.Series, threshold: float = 2.0) -> pd.Series:
     return series[scaled < threshold]
 
 
-def calculate_avg_duration(open_dates: pd.Series, close_dates: pd.Series) -> str:
+def calculate_avg_duration(open_dates: pd.Series, close_dates: pd.Series):
     """Calculate and format the average trade duration."""
     durations = (close_dates - open_dates).dt.total_seconds()
     avg_seconds = durations.mean()
@@ -709,7 +736,7 @@ def calculate_avg_duration(open_dates: pd.Series, close_dates: pd.Series) -> str
     return " ".join(parts) if parts else "<1s"
 
 
-def find_longest_streaks_vectorized(df: pd.DataFrame, col: str) -> list[str]:
+def find_longest_streaks_vectorized(df: pd.DataFrame, col: str):
     """Find longest consecutive profit/loss streaks without manual loops."""
     sign = np.sign(df[col])  # 1 for profit, -1 for loss, 0 for breakeven
     sign_groups = (sign != sign.shift()).cumsum()
@@ -730,7 +757,6 @@ def analyze_trades(trades: pd.DataFrame, show: bool = True):
     """Analyze trading statistics from a trades DataFrame."""
     if trades.empty:
         return pd.DataFrame([["No trades to analyze"]], columns=["Trading Statistics"])
-
     df = trades.copy()
     df["open_date"] = pd.to_datetime(df["open_date"])
     df["close_date"] = pd.to_datetime(df["close_date"])
@@ -740,6 +766,13 @@ def analyze_trades(trades: pd.DataFrame, show: bool = True):
     # Basic stats
     profits = df.loc[df["net_profit"] > 0, "net_profit"]
     losses = df.loc[df["net_profit"] < 0, "net_profit"]
+
+    # Calculate profit factor
+    gross_profit = profits.sum() if not profits.empty else 0
+    gross_loss = abs(losses.sum()) if not losses.empty else 0
+    profit_factor = gross_profit / gross_loss if gross_loss > 0 else float(
+        'inf') if gross_profit > 0 else 0
+
     results = [
         f"Avg profit: {profits.mean():.1f}, Avg loss: {losses.mean():.1f}",
         f"Avg trade duration: {calculate_avg_duration(df['open_date'], df['close_date'])}"
@@ -774,7 +807,8 @@ def analyze_trades(trades: pd.DataFrame, show: bool = True):
     yearly_profit = full_daily.groupby("year")["profit"].sum()
     results.extend([
         f"Avg trades/year: {yearly_trades.mean():.1f}",
-        f"Avg profit/year: {yearly_profit.mean():.1f}"
+        f"Avg profit/year: {yearly_profit.mean():.1f}",
+        f"Profit Factor: {profit_factor:.2f}",
     ])
 
     # Group stats by position type
@@ -789,10 +823,19 @@ def analyze_trades(trades: pd.DataFrame, show: bool = True):
 
         grouped = df.groupby('position_type')
         for pos_type, group in grouped:
-            avg_win = group.loc[group['net_profit'] > 0, 'net_profit'].mean()
-            avg_loss = group.loc[group['net_profit'] < 0, 'net_profit'].mean()
+            # Calculate profit factor for each position type
+            pos_profits = group.loc[group['net_profit'] > 0, 'net_profit']
+            pos_losses = group.loc[group['net_profit'] < 0, 'net_profit']
+            pos_gross_profit = pos_profits.sum() if not pos_profits.empty else 0
+            pos_gross_loss = abs(pos_losses.sum()) if not pos_losses.empty else 0
+            pos_profit_factor = pos_gross_profit / pos_gross_loss if pos_gross_loss > 0 else float(
+                'inf') if pos_gross_profit > 0 else 0
+
+            avg_win = pos_profits.mean()
+            avg_loss = pos_losses.mean()
             results.append(
-                f"{pos_type.capitalize()}: Avg win: {avg_win:.2f}, Avg loss: {avg_loss:.2f}")
+                f"{pos_type.capitalize()}: PF: {pos_profit_factor:.2f}, Avg win: {avg_win:.2f}, Avg loss: {avg_loss:.2f}"
+            )
 
     if show:
         pprint(results)
@@ -829,6 +872,7 @@ def get_year_stats(portfolio):
 
 def html_report(portfolio, outfile="portfolio-report.html", title="Account report"):
     import json
+    import os
     import sys
     """Generate HTML report of portfolio performance and trades."""
     try:
@@ -854,7 +898,6 @@ def html_report(portfolio, outfile="portfolio-report.html", title="Account repor
             subprocess.call([opener, filename])
 
     # Generate basic metrics
-    
 
     def format_spans(value_str):
         """Apply color formatting to positive/negative values."""
@@ -863,9 +906,9 @@ def html_report(portfolio, outfile="portfolio-report.html", title="Account repor
         if value_str.startswith("-"):
             return f'<span class="negative">{value_str}</span>'
         return value_str
-    
+
     base_stats = portfolio.basic_report(show=False)
-    
+
     base_stats_fmt = []
     for metric, val in base_stats:
         val = format_spans(str(val))
@@ -873,18 +916,16 @@ def html_report(portfolio, outfile="portfolio-report.html", title="Account repor
             if pd.to_numeric(val.replace('%', '').replace(',', '')) == 0:
                 val = '<span class="negative">0.0</span> '
         base_stats_fmt.append((metric, val))
-    
+
     metrics_df = pd.DataFrame(base_stats_fmt, columns=["Metric", "Value"])
     # CSS class for tables
     pure_table = "pure-table"
 
-    trade_stats = portfolio.stats_trades().to_html(classes=[pure_table],
-                                                   index=False,
-                                                   border=0)
+    trade_stats = portfolio.stats_trades().to_html(classes=[pure_table], index=False, border=0)
     # Prepare trades data
     trades_df = portfolio.get_tradelist()
-    trades_df["open_date"] = trades_df["open_date"].map(lambda d: datetime_to_str(d))
-    trades_df["close_date"] = trades_df["close_date"].map(lambda d: datetime_to_str(d))
+    trades_df["open_date"] = trades_df["open_date"].map(datetime_to_str)
+    trades_df["close_date"] = trades_df["close_date"].map(datetime_to_str)
 
     # Prepare chart data
     equity_data = portfolio.get_equity().capital
@@ -957,8 +998,8 @@ def excel_report(portfolio, outfile="portfolio-report.xlsx", title="Porfolio rep
     )
 
     trades_df = portfolio.get_tradelist()
-    trades_df["open_date"] = trades_df["open_date"].map(lambda d: datetime_to_str(d))
-    trades_df["close_date"] = trades_df["close_date"].map(lambda d: datetime_to_str(d))
+    trades_df["open_date"] = trades_df["open_date"].map(datetime_to_str)
+    trades_df["close_date"] = trades_df["close_date"].map(datetime_to_str)
     excel_file.write(trades_df, title="Trade List", worksheet_name="Trades")
 
     excel_file.write(portfolio.get_equity(), title="Equity Curve", worksheet_name="Equity")
