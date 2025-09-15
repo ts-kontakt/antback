@@ -56,8 +56,7 @@ def backtest_sma_strategy(price_series, symbol, fast_period, slow_period):
                 account.process("close", symbol, timestamp, price, log_msg="Reversal")
 
         account.process(action, symbol, timestamp, price)
-    # close remaining position
-    account.process('close', symbol, timestamp, price)
+
     return account
 
 

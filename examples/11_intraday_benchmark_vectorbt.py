@@ -1,10 +1,10 @@
 import time
 import pandas as pd
-
 import antback as ab
 
+def timeit(func):
+    """Decorator to measure execution time of a function."""
 
-def timer(func):
     def wrapper(*args, **kwargs):
         start = time.perf_counter()
         result = func(*args, **kwargs)
@@ -15,85 +15,82 @@ def timer(func):
     return wrapper
 
 
-@timer
-def backtest_sma_cross(prices, symbol, fast=5, slow=50):
-    """Backtest SMA crossover strategy using Antback backtesting engine."""
-    account = ab.CFDAccount(
-        cash=10_000, margin_requirement=0.1, leverage=1, fees=0.0, warn=0
-    )
-    cross_func = ab.new_cross_func()
+@timeit
+def backtest_sma_cross(rows, sym, fast=5, slow=50):
+    """Backtest SMA crossover using Antback."""
+    acct = ab.CFDAccount(cash=10_000, margin_requirement=0.1,
+                         leverage=1, fees=0.0, warn=0)
+    cross = ab.new_cross_func()
     sma_fast = ab.create_sma_func(period=fast)
     sma_slow = ab.create_sma_func(period=slow)
 
-    for timestamp, price in prices:
-        signal = "update"
+    for dt, price in rows:
+        sig = "update"
         fast_val = sma_fast(price)
         slow_val = sma_slow(price)
 
         if fast_val and slow_val:
-            direction = cross_func(fast_val, slow_val)
-            if direction == "up":
-                signal = "long"
-            elif direction == "down":
-                signal = "short"
+            side = cross(fast_val, slow_val)
+            if side == "up":
+                sig = "long"
+            elif side == "down":
+                sig = "short"
 
-        if account.position:
-            position_type = account.position[-1]
-            if signal != position_type and signal in ("long", "short"):
-                account.process(
-                    "close", symbol, timestamp, price, log_msg="reverse position"
-                )
+        if acct.position:
+            pos_type = acct.position[-1]
+            if sig != pos_type and sig in ("long", "short"):
+                acct.process("close", sym, dt, price,
+                             log_msg="reverse position")
 
-        account.process(signal, symbol, timestamp, price)
+        acct.process(sig, sym, dt, price)
 
-    return account
-
-
-def format_currency(value):
-    """Format number as currency string."""
-    return f"{value:,.2f}"
+    return acct
 
 
-def show_vbt_performance(portfolio):
+def show_vbt_perf(port):
     """Display performance metrics from a vectorbt portfolio."""
-    equity = portfolio.value()
-    start_date = equity.index[0].strftime("%Y-%m-%d")
-    end_date = equity.index[-1].strftime("%Y-%m-%d")
+
+    def fmt(val):
+        return f"{val:,.2f}"
+
+    eq = port.value()
+    start = eq.index[0].strftime("%Y-%m-%d")
+    end = eq.index[-1].strftime("%Y-%m-%d")
 
     metrics = [
-        ["Vectorbt portfolio summary:", ""],
-        ["Date Range:", f"{start_date} to {end_date}"],
-        ["Total Return (%):", f"{portfolio.total_return() * 100:+.2f}%"],
-        ["Ann. Ret. (%):", f"{portfolio.annualized_return() * 100:.2f}%"],
-        ["Max Drawdown:", f"{portfolio.max_drawdown() * 100:.1f}%"],
-        ["Winning Ratio (%):", f"{portfolio.trades.win_rate() * 100:.2f}%"],
+        ["\nVectorbt summary:", ""],
+        ["Date Range:", f"{start} to {end}"],
+        ["Total Return (%):", f"{port.total_return() * 100:+.2f}%"],
+        ["Ann. Ret. (%):", f"{port.annualized_return() * 100:.2f}%"],
+        ["Max Drawdown:", f"{port.max_drawdown() * 100:.1f}%"],
+        ["Win Ratio (%):", f"{port.trades.win_rate() * 100:.2f}%"],
         [
             "Max DD Start:",
-            equity.cummax().sub(equity).div(equity.cummax()).idxmin().strftime("%Y-%m-%d"),
+            eq.cummax().sub(eq).div(eq.cummax()).idxmin().strftime("%Y-%m-%d"),
         ],
-        ["Net Profit:", format_currency(portfolio.final_value() - portfolio.init_cash)],
-        ["Total Fees Paid:", format_currency(portfolio.orders.fees.sum())],
-        ["Starting Capital:", format_currency(portfolio.init_cash)],
-        ["Ending Capital:", format_currency(portfolio.final_value())],
-        ["Number of Trades:", str(int(portfolio.trades.count()))],
+        ["Net Profit:", fmt(port.final_value() - port.init_cash)],
+        ["Fees Paid:", fmt(port.orders.fees.sum())],
+        ["Start Cap:", fmt(port.init_cash)],
+        ["End Cap:", fmt(port.final_value())],
+        ["Trades:", str(int(port.trades.count()))],
     ]
 
-    for name, value in metrics:
-        print(f"{name:<20} {value}")
+    for name, val in metrics:
+        print(f"{name:<20} {val}")
 
-import vectorbt as vbt
-@timer
-def run_vbt(prices, fast=10, slow=30, message=""):
-    """Run vectorbt MA crossover backtest."""
-    fast_ma = vbt.MA.run(prices, fast, short_name="fast")
-    slow_ma = vbt.MA.run(prices, slow, short_name="slow")
 
-    long_entries = fast_ma.ma_crossed_above(slow_ma)
-    long_exits = fast_ma.ma_crossed_below(slow_ma)
-    short_entries = fast_ma.ma_crossed_below(slow_ma)
-    short_exits = fast_ma.ma_crossed_above(slow_ma)
+@timeit
+def run_vbt(prices, vbt_mod, fast=10, slow=30, msg=""):
+    """Run vectorbt SMA crossover backtest."""
+    sma_fast = vbt_mod.MA.run(prices, fast, short_name="fast")
+    sma_slow = vbt_mod.MA.run(prices, slow, short_name="slow")
 
-    portfolio = vbt.Portfolio.from_signals(
+    long_entries = sma_fast.ma_crossed_above(sma_slow)
+    long_exits = sma_fast.ma_crossed_below(sma_slow)
+    short_entries = sma_fast.ma_crossed_below(sma_slow)
+    short_exits = sma_fast.ma_crossed_above(sma_slow)
+
+    port = vbt_mod.Portfolio.from_signals(
         prices,
         entries=long_entries,
         exits=long_exits,
@@ -103,8 +100,8 @@ def run_vbt(prices, fast=10, slow=30, message=""):
         allow_partial=False,
     )
 
-    print('\n' + message)
-    return portfolio
+    print("\n" + msg)
+    return port
 
 
 def main():
@@ -112,25 +109,36 @@ def main():
     df = pd.read_csv("btc_1m.csv")
     df["close_time"] = pd.to_datetime(df["close_time"])
     df.set_index("close_time", inplace=True)
-    resampled = df.close.resample("10min").ohlc()
-    historical_prices = tuple(zip(resampled.index, resampled.close))
 
-    print(f"Total bars: {len(historical_prices)}")
+    resamp = df.close.resample("10min").ohlc()
+    rows = tuple(zip(resamp.index, resamp.close))
 
-    print("\n--- Running antback...")
-    custom_result = backtest_sma_cross(historical_prices, "BTC", fast=40, slow=60)
-    custom_result.basic_report()
+    print(f"Total bars: {len(rows)}")
 
+    print("\n--- Running Antback...")
+    acct = backtest_sma_cross(rows, "BTC", fast=40, slow=60)
+    acct.basic_report()
     print("\n--- Running vectorbt...")
-    _ = run_vbt(resampled.close, fast=40, slow=60, message="vectorbt: compilation run")
-    vbt_result = run_vbt(resampled.close, fast=40, slow=60, message="vectorbt: compiled run")
+    
+    # Import vectorbt only after Antback runs.
+    # The import takes a little time, so we defer it 
+    # to keep Antback timing clean. We then pass `vectorbt` 
+    # as `vbt_mod` (dependency injection).
+    
+    import vectorbt as vbt
+    
+    print(f"vectorbt version: {vbt.__version__}") #vectorbt version:  0.28.1
+    _ = run_vbt(resamp.close, vbt, fast=40, slow=60, msg="vectorbt: compilation run")
+    port = run_vbt(resamp.close, vbt, fast=40, slow=60, msg="vectorbt: compiled run")
 
-    show_vbt_performance(vbt_result)
+    show_vbt_perf(port)
 
-    if False:  # Set to True to enable trade display
-        trades = vbt_result.trades.records_readable
+    if False:  # Enable to export trades
+        trades = port.trades.records_readable
         import df2tables as df2t
-        df2t.render(pd.DataFrame(trades), to_file="vbt_trade.html", title="vbt_trades")
+        df2t.render(pd.DataFrame(trades),
+                    to_file="vbt_trade.html", title="vbt_trades")
+
 
 
 if __name__ == "__main__":

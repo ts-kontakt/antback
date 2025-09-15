@@ -10,7 +10,7 @@ def test_atr_strategy(data, symbol, fast=10, slow=30, atr_period=14, atr_mult=3)
     atr_stop = ab.new_atr_stop_func(n=atr_period, atr_multiplier=atr_mult)
 
     for row in data.itertuples():
-        date, _, high, low, close = list(row)[:5]  # Unpack OHLC data
+        date, _, high, low, close = row[:5]  # Unpack OHLC data
         
         prices.append(close)
         price_hist = prices.values()

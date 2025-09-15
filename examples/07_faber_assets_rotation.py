@@ -20,7 +20,7 @@ def fetch_price_history(tickers, years_back=10):
     Returns:
         pd.DataFrame: DataFrame with daily closing prices for the specified tickers.
     """
-    assert isinstance(tickers, list), "tickers must be a list of strings"
+    assert isinstance(tickers, list)
     end_date = date.today()
     start_date = end_date - timedelta(days=years_back * 365)
 
@@ -135,7 +135,7 @@ def main():
     tickers = ['SPY', 'GLD', 'TLT']
 
     # Optional: Uncomment to include Bitcoin
-    tickers.append('BTC-USD')
+    # tickers.append('BTC-USD')
 
     # Fetch data and execute backtest
     price_history = fetch_price_history(tickers, years_back=10)

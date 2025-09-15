@@ -9,7 +9,6 @@ from scipy import stats
 from sklearn.preprocessing import KBinsDiscretizer, OneHotEncoder
 from sklearn.tree import DecisionTreeClassifier
 from trade import quotesdb
-from xgboost import XGBClassifier
 
 import antback as ab
 
@@ -420,12 +419,14 @@ def main():
     
  
     
-    # Initialize model
-    from lightgbm import LGBMClassifier
-    # prediction_model = LGBMClassifier()
+    # Initialize models
+    try:
+        from lightgbm import LGBMClassifier
+        prediction_model1 = LGBMClassifier()
+    except ImportError:
+        pass
+    
     prediction_model = DecisionTreeClassifier()
-    # from xgboost import XGBClassifier
-    # prediction_model = XGBClassifier()
     
     # Train the model and get training results
     training_results = make_training_data(

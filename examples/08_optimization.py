@@ -31,17 +31,6 @@ def backtest_sma(data, symbol, fast=20, slow=50):
     return port.base_results()  # (return, max_drawdown)
 
 
-def optimize_strategy(params):
-    """Run backtest with given parameters and return results."""
-    fast, slow = params
-    ret, dd = backtest_sma(close_prices, symbol, fast, slow)
-    return {
-        'Fast MA': fast,
-        'Slow MA': slow,
-        'Return': ret,
-        'Max DD': dd
-    }
-
 
 if __name__ == "__main__":
     # Configuration
@@ -52,6 +41,17 @@ if __name__ == "__main__":
     # Load data
     data = yf.Ticker(symbol).history(period='10y')
     close_prices = data['Close']
+    def optimize_strategy(params):
+        """Run backtest with given parameters and return results."""
+        fast, slow = params
+        ret, dd = backtest_sma(close_prices, symbol, fast, slow)
+        return {
+            'Fast MA': fast,
+            'Slow MA': slow,
+            'Return': ret,
+            'Max DD': dd
+        }
+    
     
     # Generate parameter combinations
     param_space = list(product(fast_range, slow_range))
