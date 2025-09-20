@@ -8,7 +8,6 @@ import talipp.indicators as ta
 from scipy import stats
 from sklearn.preprocessing import KBinsDiscretizer, OneHotEncoder
 from sklearn.tree import DecisionTreeClassifier
-from trade import quotesdb
 
 import antback as ab
 
@@ -420,19 +419,20 @@ def main():
  
     
     # Initialize models
+    prediction_model = DecisionTreeClassifier()
     try:
         from lightgbm import LGBMClassifier
-        prediction_model1 = LGBMClassifier()
+        prediction_model2 = LGBMClassifier()
     except ImportError:
-        pass
+        prediction_model =  prediction_model2
     
-    prediction_model = DecisionTreeClassifier()
     
     # Train the model and get training results
     training_results = make_training_data(
         ticker=TICKER_SYMBOL,
         price_data=training_data,
-        model=prediction_model,
+        # model=prediction_model,
+        model=prediction_model2,
         feat_window_size=FEATURE_WINDOW_SIZE,
         forecast_days=FORECAST_HORIZON_DAYS,
         target_min=MIN_TARGET_RETURN

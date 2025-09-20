@@ -38,7 +38,7 @@ def backtest_sma_cross(rows, sym, fast=5, slow=50):
 
         if acct.position:
             pos_type = acct.position[-1]
-            if sig != pos_type and sig in ("long", "short"):
+            if sig != pos_type and sig == "long" or sig == "short":
                 acct.process("close", sym, dt, price,
                              log_msg="reverse position")
 
