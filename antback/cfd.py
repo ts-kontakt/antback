@@ -2,7 +2,7 @@
 # coding=utf-8
 from collections import defaultdict, namedtuple
 from datetime import date, datetime
-
+from math import isnan
 import numpy as np
 import pandas as pd
 
@@ -13,11 +13,9 @@ except ImportError:
 
 
 def pct_diff(prev, today):
-    prev, today = float(prev), float(today)
-    try:
-        return (today - prev) / prev * 100
-    except ZeroDivisionError:
-        return 0.0
+    if prev == 0:
+        return float('nan')
+    return (today - prev) / prev * 100
 
 
 TradeData = namedtuple(
@@ -218,8 +216,6 @@ class CFDAccount:
                 )
 
         date_obj = self._validate_and_update_date(date_obj)
-        price = float(price)
-
         # Calculate position size
         if fixed_val:
             assert fixed_val >= self.MIN_AMOUNT, (f"fixed_val amount must be >= {
@@ -286,7 +282,7 @@ class CFDAccount:
         self.save_position(date_obj)
         return quantity
 
-    def close(self, date_obj, price, log_msg=""):
+    def _close(self, date_obj, price, log_msg=""):
         """Close the current CFD/FX position."""
         if self.position is None:
             if self.warn:
@@ -294,8 +290,6 @@ class CFDAccount:
             return
 
         date_obj = self._validate_and_update_date(date_obj)
-        price = float(price)
-
         ticker, quantity, entry_price, entry_date, _, position_type = self.position
 
         # Calculate P&L
@@ -348,7 +342,7 @@ class CFDAccount:
         self.position = None
         self.save_position(date_obj)
 
-    def update(self, ticker, date_obj, price):
+    def _update(self, ticker, date_obj, price):
         """Update position's current price and check for margin calls."""
         date_obj = self._validate_and_update_date(date_obj)
         if price <= 0:
@@ -369,14 +363,17 @@ class CFDAccount:
 
     def process(self, signal, ticker, date_obj, price, fixed_val=None, log_msg=""):
         """Unified entry-point for any daily signal."""
+        if price <= 0 or isnan(price):
+            raise ValueError("Price must be positive")
+        
         if signal == "update" or signal is None:
-            self.update(ticker, date_obj, price)
+            self._update(ticker, date_obj, price)
         elif signal == "long":
             self._open_position(ticker, date_obj, price, fixed_val, "long")
         elif signal == "short":
             self._open_position(ticker, date_obj, price, fixed_val, "short")
         elif signal == "close":
-            self.close(date_obj, price, log_msg=log_msg)
+            self._close(date_obj, price, log_msg=log_msg)
         else:
             raise ValueError(f"Unknown signal {signal!r}")
 
@@ -385,7 +382,6 @@ class CFDAccount:
         if self.position:
             ticker, quantity, entry_price, entry_date, current_price, position_type = (
                 self.position)
-            # Fixed: Now storing entry_price in pos_data
             pos_data = (
                 ticker,
                 quantity,

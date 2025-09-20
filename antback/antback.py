@@ -3,7 +3,7 @@
 from collections import defaultdict, namedtuple
 from datetime import date, datetime, timedelta
 from pprint import pprint
-
+from math import isnan
 import numpy as np
 import pandas as pd
 
@@ -14,11 +14,9 @@ except ImportError:
 
 
 def pct_diff(prev, today):
-    prev, today = float(prev), float(today)
-    try:
-        return (today - prev) / prev * 100
-    except ZeroDivisionError:
-        return 0.0
+    if prev == 0:
+        return float('nan')
+    return (today - prev) / prev * 100
 
 
 TradeData = namedtuple(
@@ -157,7 +155,7 @@ class Portfolio:
                     "For multi ticker portfolio fixed_val buy value is expected"
                 )
 
-        if price <= 0 or pd.isna(price):
+        if price <= 0 or isnan(price):
             raise ValueError("Price must be positive")
 
         date_obj = self._validate_and_update_date(date_obj)
@@ -239,7 +237,8 @@ class Portfolio:
     def sell(self, ticker, date_obj, price, log_msg=""):
         """Sell shares of a ticker."""
         date_obj = self._validate_and_update_date(date_obj)
-        price = float(price)
+        if price <= 0 or isnan(price):
+            raise ValueError("Price must be positive")
 
         if ticker not in self.positions:
             if self.warn:
@@ -276,7 +275,7 @@ class Portfolio:
     def update(self, ticker, date_obj, price):
         """Update price for existing position."""
         date_obj = self._validate_and_update_date(date_obj)
-        if price <= 0:
+        if price <= 0 or isnan(price):
             raise ValueError("Price must be positive")
 
         if ticker in self.positions:

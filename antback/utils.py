@@ -30,11 +30,9 @@ def get_drawdown(prices):
 
 
 def pct_diff(prev, today):
-    prev, today = float(prev), float(today)
-    try:
-        return (today - prev) / prev * 100
-    except ZeroDivisionError:
-        return 0.0
+    if prev == 0 or math.isnan(prev):
+        return float('nan')
+    return (today - prev) / prev * 100
 
 
 class RollingList:
@@ -467,7 +465,6 @@ def create_sma_func_p(period):
         nonlocal current_sum, last_sma
 
         if (new_value != new_value):  #  if math.isnan(new_value):
-            # if pd.isna(new_value):
             return last_sma
 
         if len(data_window) == period:
