@@ -565,11 +565,11 @@ def get_orders(port):
     tradelist = port.get_tradelist()
     orders = pd.Series(name="signals")
     for ticker, values in port.positions.items():
-        buy_date, quantity, buy_price, last_date, last_price = values
-        orders[buy_date] = quantity
+        open_date, quantity, buy_price, last_date, last_price = values
+        orders[open_date] = quantity
     for row in port.trades:
-        orders[row.buy_date] = row.quantity
-        orders[row.sell_date] = -row.quantity
+        orders[row.open_date] = row.quantity
+        orders[row.close_date] = -row.quantity
     return orders.fillna(False)
 
 
@@ -933,7 +933,6 @@ def html_report(portfolio, outfile="portfolio-report.html", title="Account repor
     trades_table = df2t.render_inline(
         trades_df,
         title="Trades",
-        dropdown_select_threshold=7,
         load_column_control=True,
         num_html=["net_profit", "profit_pct", "gross_profit"],
     )
