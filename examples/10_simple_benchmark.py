@@ -5,8 +5,6 @@ import antback as ab
 
 
 def timeit(func):
-    """Decorator to measure execution time of a function."""
-
     def wrapper(*args, **kwargs):
         start = time.perf_counter()
         result = func(*args, **kwargs)

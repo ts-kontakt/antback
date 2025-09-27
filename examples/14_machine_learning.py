@@ -412,27 +412,53 @@ def main():
     import yfinance as yf
     price_data = yf.Ticker(TICKER_SYMBOL).history(period="10y")
     
-    
     # Split data into training and test sets
     training_data = price_data.iloc[:-TEST_PERIOD_DAYS].tail(TEST_PERIOD_DAYS * TRAINING_MULTIPLIER)
     
- 
+    # ========== MODEL SELECTION ==========
+    # Uncomment ONE of the following models to use:
     
-    # Initialize models
-    prediction_model = DecisionTreeClassifier()
-    try:
-        from lightgbm import LGBMClassifier
-        prediction_model2 = LGBMClassifier()
-    except ImportError:
-        prediction_model =  prediction_model2
+    # 1. Decision Tree Classifier
+    prediction_model = DecisionTreeClassifier(random_state=42)
+    model_name = "Decision Tree"
     
+    # 2. Random Forest Classifier
+    # from sklearn.ensemble import RandomForestClassifier
+    # prediction_model = RandomForestClassifier(n_estimators=100, random_state=42)
+    # model_name = "Random Forest"
+    
+    # 3. LightGBM Classifier
+    # try:
+    #     from lightgbm import LGBMClassifier
+    #     prediction_model = LGBMClassifier(random_state=42, verbose=-1)
+    #     model_name = "LightGBM"
+    # except ImportError:
+    #     print("LightGBM not installed. Install with: pip install lightgbm")
+    #     prediction_model = DecisionTreeClassifier(random_state=42)
+    #     model_name = "Decision Tree (fallback)"
+    
+    # 4. XGBoost Classifier
+    # try:
+        # from xgboost import XGBClassifier
+        # prediction_model = XGBClassifier(random_state=42, eval_metric='logloss')
+        # model_name = "XGBoost"
+    # except ImportError:
+        # print("XGBoost not installed. Install with: pip install xgboost")
+        # prediction_model = DecisionTreeClassifier(random_state=42)
+        # model_name = "Decision Tree (fallback)"
+    
+    # =====================================
+    
+    print(f"Using model: {model_name}")
+    print(f"Training on {len(training_data)} days of data")
+    print(f"Testing on {TEST_PERIOD_DAYS} days of data")
+    print("-" * 50)
     
     # Train the model and get training results
     training_results = make_training_data(
         ticker=TICKER_SYMBOL,
         price_data=training_data,
-        # model=prediction_model,
-        model=prediction_model2,
+        model=prediction_model,
         feat_window_size=FEATURE_WINDOW_SIZE,
         forecast_days=FORECAST_HORIZON_DAYS,
         target_min=MIN_TARGET_RETURN
@@ -441,8 +467,11 @@ def main():
     # Optionally visualize training data
     SHOW_TRAINING_DATA = False
     if SHOW_TRAINING_DATA:
-        import df2tables as df2t
-        df2t.render(training_results.train_data, to_file='train_data.html')
+        try:
+            import df2tables as df2t
+            df2t.render(training_results.train_data, to_file=f'train_data_{model_name.lower().replace(" ", "_")}.html')
+        except ImportError:
+            print("df2tables not installed. Skipping training data visualization.")
     
     # Initialize and run backtest
     test_portfolio = ab.Portfolio(
@@ -453,12 +482,17 @@ def main():
     )
     
     test_data = price_data.tail(TEST_PERIOD_DAYS)
+    print(f"\nStarting backtest with {model_name}...")
+    print("-" * 50)
+    
     backtest_strategy(
         portfolio=test_portfolio,
         training_result=training_results,
         test_data=test_data,
         feat_window_size=FEATURE_WINDOW_SIZE
     )
+    
+    print(f"\nBacktest completed using {model_name}")
 
 
 if __name__ == "__main__":

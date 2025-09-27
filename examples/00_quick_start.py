@@ -18,8 +18,8 @@ for date, price in data["Close"].items():
     signal = "update"  # Reset signal - just update portfolio position
 
     if len(price_history) >= slow:
-        fast_ma = np.mean(price_history[-fast:]) 
-        slow_ma = np.mean(price_history[-slow:])
+        fast_ma = np.nanmean(price_history[-fast:]) 
+        slow_ma = np.nanmean(price_history[-slow:])
         direction = cross(fast_ma, slow_ma)  # active crosses  passive
         if direction == "up":
             signal = "buy"
