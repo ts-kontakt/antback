@@ -596,8 +596,10 @@ def calculate_annual_growth_rate(portfolio):
         raise ValueError("Portfolio missing starting_capital")
     if not callable(getattr(portfolio, 'current_value', None)):
         raise ValueError("Portfolio must have current_value() method")
-
-    start_date = min(portfolio.pos_history.keys())
+    
+    history_dates = portfolio.pos_history.keys()
+    start_date = min(history_dates)
+    # end_date = max(history_dates)
     end_date = portfolio.max_date
 
     if not isinstance(start_date,
@@ -929,13 +931,30 @@ def html_report(portfolio, outfile="portfolio-report.html", title="Account repor
     chart_x = to_js_timestamps(equity_data.index)
     chart_y = equity_data.values.tolist()
 
+    scroll_cfg = {
+        "paging": True,
+        "pageLength" : 30,
+        "scrollCollapse": False,
+        # "scrollY": '50vh', # slow for large tables
+        "scrollX": "90vw"
+    }
     # Generate trades table
-    trades_table = df2t.render_inline(
-        trades_df,
-        title="Trades",
-        load_column_control=True,
-        num_html=["net_profit", "profit_pct", "gross_profit"],
-    )
+    
+    try:
+        trades_table = df2t.render_inline(
+            trades_df,
+            load_column_control=True,
+            num_html=["net_profit", "profit_pct", "gross_profit"],
+            js_opts=scroll_cfg
+        )
+    except TypeError:
+        print('Upgrade df2tables to recent version!')
+        trades_table = df2t.render_inline(
+            trades_df,
+            load_column_control=True,
+            num_html=["net_profit", "profit_pct", "gross_profit"],
+        )
+        
 
     # Template data
     data = {
@@ -964,9 +983,8 @@ def html_report(portfolio, outfile="portfolio-report.html", title="Account repor
     try:
         # Python 3.9+
         from importlib import resources
-
         template_path = str(resources.files("antback").joinpath(template_file))
-    except ImportError:
+    except (ImportError, AttributeError):
         # Fallback for older versions
         template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), template_file)
 

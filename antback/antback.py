@@ -2,8 +2,9 @@
 # coding=utf-8
 from collections import defaultdict, namedtuple
 from datetime import date, datetime, timedelta
-from pprint import pprint
 from math import isnan
+from pprint import pprint
+
 import numpy as np
 import pandas as pd
 
@@ -15,7 +16,7 @@ except ImportError:
 
 def pct_diff(prev, today):
     if prev == 0:
-        return float('nan')
+        return float("nan")
     return (today - prev) / prev * 100
 
 
@@ -104,7 +105,6 @@ class Portfolio:
         "total_fees_paid",
         "allow_fractional",
     )
-
     """Trading portfolio management class."""
     DEFAULT_PERCENT = 1.0
     MIN_AMOUNT = 500
@@ -126,23 +126,19 @@ class Portfolio:
         self.total_fees_paid = 0.0
         self.allow_fractional = allow_fractional
 
-    def _normalize_date(self, date_obj):
-        """Normalize date object to datetime/date."""
-        if isinstance(date_obj, (date, datetime)):
-            return date_obj
-        if isinstance(date_obj, (int, str)):
-            raise ValueError("Integer dates or strings are not allowed")
-        return pd.to_datetime(date_obj)
-
     def _validate_and_update_date(self, date_obj):
         """Validate date format and update max_date."""
-        date_obj = self._normalize_date(date_obj)
+        # date_obj = self._normalize_date(date_obj)
+        if not isinstance(date_obj, (date, datetime)):
+            raise ValueError(
+                "'date' or 'datetime' allowed. Convert using pd.to_datetime()"
+            )
 
         if self.max_date and date_obj < self.max_date:
             print(f"! Recived date: {date_obj}, self.max_date: {self.max_date}")
             raise ValueError("Date not in chronological order")
 
-        if not self.max_date or date_obj > self.max_date:
+        if self.max_date is None or date_obj > self.max_date:
             self.max_date = date_obj
 
         return date_obj
@@ -172,9 +168,9 @@ class Portfolio:
             # assert price < fixed_val, f"fixed_val {fixed_val}  must be >= price {price} "
             if price > fixed_val:
                 print(f"!warning: price {price}  >= fixed_val {fixed_val}")
-            assert fixed_val >= self.MIN_AMOUNT, f"fixed_val amount must be >= {
+            assert fixed_val >= self.MIN_AMOUNT, f"""fixed_val amount must be >= {
                 self.MIN_AMOUNT
-            }"
+            }"""
             if self.cash < fixed_val:
                 msg = f"{date_obj} - Insufficient cash: {self.cash:.1f} < {fixed_val}"
                 self.events[date_obj].append(msg)
@@ -227,10 +223,8 @@ class Portfolio:
         )
 
         if self.warn:
-            print(
-                f"""Bought {quantity:.4f} shares of {ticker} at {price:.2f}, 
-                total cost: {total_cost:.2f}"""
-            )
+            print(f"""Bought {quantity:.4f} shares of {ticker} at {price:.2f}, 
+                total cost: {total_cost:.2f}""")
 
         self.save_positions(date_obj)
 
@@ -265,10 +259,8 @@ class Portfolio:
         )
 
         if self.warn:
-            print(
-                f"""Sold {quantity:.4f} shares of {ticker} at {price:.2f}, 
-                net proceeds: {net_proceeds:.2f}"""
-            )
+            print(f"""Sold {quantity:.4f} shares of {ticker} at {price:.2f},
+                 net proceeds: {net_proceeds:.2f}""")
 
         self.save_positions(date_obj)
 
@@ -350,8 +342,8 @@ class Portfolio:
             positions_value = self.get_open_positions()["positions_total"]
             total += positions_value
             if self.warn:
-                print(f"""Cash: {self.cash:.2f}, Positions: {positions_value:.2f}, 
-                Total: {total:.2f}""")
+                print(f"""Cash: {self.cash:.2f}, Positions: {positions_value:.2f},
+                 Total: {total:.2f}""")
         return total
 
     def get_tradelist(self):

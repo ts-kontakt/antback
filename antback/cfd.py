@@ -3,6 +3,7 @@
 from collections import defaultdict, namedtuple
 from datetime import date, datetime
 from math import isnan
+
 import numpy as np
 import pandas as pd
 
@@ -14,7 +15,7 @@ except ImportError:
 
 def pct_diff(prev, today):
     if prev == 0:
-        return float('nan')
+        return float("nan")
     return (today - prev) / prev * 100
 
 
@@ -98,10 +99,21 @@ class CFDAccount:
     """CFD/FX Trading portfolio with margin requirements and leverage."""
 
     __slots__ = (
-        'warn', 'starting_capital', 'cash', 'blocked_margin', 'position',
-        'margin_requirement', 'leverage', 'margin_call_level', 'fees',
-        'max_date', 'trades', 'pos_history', 'events', 'total_fees_paid',
-        'allow_fractional'
+        "warn",
+        "starting_capital",
+        "cash",
+        "blocked_margin",
+        "position",
+        "margin_requirement",
+        "leverage",
+        "margin_call_level",
+        "fees",
+        "max_date",
+        "trades",
+        "pos_history",
+        "events",
+        "total_fees_paid",
+        "allow_fractional",
     )
 
     DEFAULT_PERCENT = 1.0
@@ -148,13 +160,10 @@ class CFDAccount:
         self.total_fees_paid = 0.0
         self.allow_fractional = allow_fractional
 
-    def _normalize_date(self, date_obj):
-        if isinstance(date_obj, (date, datetime)):
-            return date_obj
-        return pd.to_datetime(date_obj)
-
     def _validate_and_update_date(self, date_obj):
-        assert isinstance(date_obj, (date, datetime))
+        """Validate date format and update max_date."""
+        if not isinstance(date_obj, (date, datetime)):
+            raise ValueError("'date' or 'datetime' allowed. Try convert using pandas.to_datetime")
 
         if self.max_date and date_obj < self.max_date:
             print(f"! Received date: {date_obj}, self.max_date: {self.max_date}")
@@ -174,7 +183,9 @@ class CFDAccount:
         if not self.position:
             return 0.0
 
-        ticker, quantity, entry_price, entry_date, current_price, position_type = self.position
+        ticker, quantity, entry_price, entry_date, current_price, position_type = (
+            self.position
+        )
 
         if position_type == "long":
             # Long position: profit when price goes up
@@ -218,8 +229,9 @@ class CFDAccount:
         date_obj = self._validate_and_update_date(date_obj)
         # Calculate position size
         if fixed_val:
-            assert fixed_val >= self.MIN_AMOUNT, (f"fixed_val amount must be >= {
-                self.MIN_AMOUNT}")
+            assert fixed_val >= self.MIN_AMOUNT, f"""fixed_val amount must be >= {
+                self.MIN_AMOUNT
+            }"""
             position_value = fixed_val
         else:
             # Use available cash with leverage
@@ -230,9 +242,9 @@ class CFDAccount:
         required_margin = position_value * self.margin_requirement
 
         if self.available_cash() < required_margin:
-            msg = f"Insufficient margin: available {
-                self.available_cash():.1f} < required {
-                required_margin:.1f}"
+            msg = f"""Insufficient margin: available {
+                self.available_cash():.1f
+            } < required {required_margin:.1f}"""
             self.events[date_obj].append(msg)
             raise ValueError(msg)
 
@@ -263,20 +275,24 @@ class CFDAccount:
         self.total_fees_paid += fees
         self.position = [ticker, quantity, price, date_obj, price, position_type]
 
-        action_msg = (f"{position_type}: {ticker}({price:.2f}*{quantity:.1f}, "
-                      f"value: {actual_position_value:.1f}, margin: {actual_required_margin:.1f}, "
-                      f"fees: {fees:.1f})")
+        action_msg = (
+            f"{position_type}: {ticker}({price:.2f}*{quantity:.1f}, "
+            f"value: {actual_position_value:.1f}, margin: {actual_required_margin:.1f}, "
+            f"fees: {fees:.1f})"
+        )
         self.events[date_obj].append(action_msg)
 
         if self.warn:
             print(
-                f"Opened {position_type} position: {
-                    quantity:.4f} {ticker} at {
-                    price:.2f}")
+                f"""Opened {position_type} position: {quantity:.4f} {ticker} at {
+                    price:.2f
+                }"""
+            )
             print(
-                f"Position value: {
-                    actual_position_value:.2f}, Required margin: {
-                    actual_required_margin:.2f}")
+                f"""Position value: {actual_position_value:.2f}, Required margin: {
+                    actual_required_margin:.2f
+                }"""
+            )
             print(f"Available cash: {self.available_cash():.2f}")
 
         self.save_position(date_obj)
@@ -320,24 +336,28 @@ class CFDAccount:
                 quantity,
                 position_type,
                 log_msg,
-            ))
+            )
+        )
 
         action = "close_long" if position_type == "long" else "close_short"
         pnl_desc = f"P&L: {net_pnl:.1f}" if net_pnl >= 0 else f"P&L: {net_pnl:.1f}"
 
         self.events[date_obj].append(
-            f"{action}: {ticker}({price:.2f}*{quantity:.1f}, {pnl_desc}, fees: {closing_fees:.1f})")
+            f"{action}: {ticker}({price:.2f}*{quantity:.1f}, {pnl_desc}, fees: {closing_fees:.1f})"
+        )
 
         if self.warn:
             print(
-                f"Closed {position_type} position: {
-                    quantity:.4f} {ticker} at {
-                    price:.2f}")
+                f"""Closed {position_type} position: {quantity:.4f} {ticker} at {
+                    price:.2f
+                }"""
+            )
             print(f"Gross P&L: {gross_pnl:.2f}, Net P&L: {net_pnl:.2f}")
             print(
-                f"Released margin: {
-                    released_margin:.2f}, Available cash: {
-                    self.available_cash():.2f}")
+                f"""Released margin: {released_margin:.2f}, Available cash: {
+                    self.available_cash():.2f
+                }"""
+            )
 
         self.position = None
         self.save_position(date_obj)
@@ -365,7 +385,7 @@ class CFDAccount:
         """Unified entry-point for any daily signal."""
         if price <= 0 or isnan(price):
             raise ValueError("Price must be positive")
-        
+
         if signal == "update" or signal is None:
             self._update(ticker, date_obj, price)
         elif signal == "long":
@@ -381,7 +401,8 @@ class CFDAccount:
         """Save current portfolio state with entry_price for proper unrealized P&L calculation."""
         if self.position:
             ticker, quantity, entry_price, entry_date, current_price, position_type = (
-                self.position)
+                self.position
+            )
             pos_data = (
                 ticker,
                 quantity,
@@ -407,7 +428,8 @@ class CFDAccount:
             return {"unrealized_pnl": 0, "open_trade": None, "margin_used": 0}
 
         ticker, quantity, entry_price, entry_date, current_price, position_type = (
-            self.position)
+            self.position
+        )
 
         trade_data = TradeData(
             ticker=ticker,
@@ -439,13 +461,15 @@ class CFDAccount:
 
         if self.warn and self.position:
             print(
-                f"Total Cash: {
-                    self.cash:.2f}, Blocked Margin: {
-                    self.blocked_margin:.2f}")
+                f"""Total Cash: {self.cash:.2f}, Blocked Margin: {
+                    self.blocked_margin:.2f
+                }"""
+            )
             print(
-                f"Unrealized P&L: {
-                    unrealized_pnl:.2f}, Total Equity: {
-                    total_equity:.2f}")
+                f"""Unrealized P&L: {unrealized_pnl:.2f}, Total Equity: {
+                    total_equity:.2f
+                }"""
+            )
 
         return total_equity
 
@@ -454,8 +478,9 @@ class CFDAccount:
         closed_trades = [trade_result(trade, self.fees) for trade in self.trades]
 
         open_trade_info = self.get_open_position()
-        open_trades = ([open_trade_info["open_trade"]]
-                       if open_trade_info["open_trade"] else [])
+        open_trades = (
+            [open_trade_info["open_trade"]] if open_trade_info["open_trade"] else []
+        )
 
         all_trades = closed_trades + open_trades
         if all_trades:
@@ -480,29 +505,33 @@ class CFDAccount:
 
         if self.position:
             ticker, quantity, entry_price, entry_date, current_price, position_type = (
-                self.position)
+                self.position
+            )
             unrealized_pnl = self.calculate_unrealized_pnl()
             position_value = current_price * quantity
 
             print(
-                f"Position: {
-                    position_type.upper()} {
-                    quantity:.4f} {ticker} @ {
-                    current_price:.2f}")
+                f"""Position: {position_type.upper()} {quantity:.4f} {ticker} 
+                {current_price:.2f}"""
+            )
             print(f"Position Value: {position_value:.2f}, Entry: {entry_price:.2f}")
             print(f"Unrealized P&L: {unrealized_pnl:.2f}")
 
             # Margin call check
             is_margin_call, equity, threshold = self.check_margin_call()
             if is_margin_call:
-                print(f"!  MARGIN CALL: Equity {equity:.2f} < Threshold {threshold:.2f}")
+                print(
+                    f"!  MARGIN CALL: Equity {equity:.2f} < Threshold {threshold:.2f}"
+                )
         else:
             print("Position: None")
 
         print(f"Margin Utilization: {self.margin_utilization():.1f}%")
         print(f"Leverage Available: {self.leverage}x")
         print(f"Total Fees Paid: {self.total_fees_paid:.2f}")
-        print(f"Return: {((self.current_value() / self.starting_capital - 1) * 100):.2f}%")
+        print(
+            f"Return: {((self.current_value() / self.starting_capital - 1) * 100):.2f}%"
+        )
 
         return f"Last Date: {self.max_date}"
 
@@ -563,29 +592,29 @@ class CFDAccount:
         current_total = self.current_value()
 
         net_trading_profit = sum(
-            trade_result(
-                trade,
-                self.fees).net_profit for trade in self.trades)
+            trade_result(trade, self.fees).net_profit for trade in self.trades
+        )
 
         open_positions_profit = 0.0
         if self.position:
             # self.position is [ticker, quantity, entry_price, entry_date, current_price, position_type]
             ticker, quantity, entry_price, entry_date, current_price, position_type = (
-                self.position)
+                self.position
+            )
 
             if position_type == "long":
                 # For long positions: profit = (current_price - entry_price) * quantity -
                 # fees
                 gross_profit = (current_price - entry_price) * quantity
                 # Only entry fees for open position
-                fees = (entry_price * quantity * self.fees)
+                fees = entry_price * quantity * self.fees
                 open_positions_profit = gross_profit - fees
             else:  # short position
                 # For short positions: profit = (entry_price - current_price) * quantity -
                 # fees
                 gross_profit = (entry_price - current_price) * quantity
                 # Only entry fees for open position
-                fees = (entry_price * quantity * self.fees)
+                fees = entry_price * quantity * self.fees
                 open_positions_profit = gross_profit - fees
 
         if self.warn:
@@ -606,7 +635,9 @@ class CFDAccount:
     def stats_trades(self):
         return utils.analyze_trades(self.get_tradelist(), show=False)
 
-    def full_report(self, kind="html", outfile="report.html", title="CFDAccount report"):
+    def full_report(
+        self, kind="html", outfile="report.html", title="CFDAccount report"
+    ):
         if kind == "excel":
             return utils.excel_report(self, title=title)
         return utils.html_report(self, outfile=outfile, title=title)
@@ -620,6 +651,7 @@ class CFDAccount:
         drawdown_val = drawdown["max_dd"]
         pf_return = pct_diff(self.starting_capital, self.current_value())
         return pf_return, drawdown_val
+
 
 def gen_equity(portfolio, show=False):
     """Generate equity line data for CFD/FX portfolio."""
@@ -668,17 +700,20 @@ def gen_equity(portfolio, show=False):
             if positions:
                 positions_str = ", ".join(
                     f"({ticker}={current_price:.4f}*{quantity:.1f}[{position_type}])"
-                    for ticker, quantity, current_price, position_type in positions)
+                    for ticker, quantity, current_price, position_type in positions
+                )
             else:
                 positions_str = ""
 
-            outlist.append((
-                date_obj,
-                capital,
-                available_cash,
-                blocked_margin,
-                positions_str,
-            ))
+            outlist.append(
+                (
+                    date_obj,
+                    capital,
+                    available_cash,
+                    blocked_margin,
+                    positions_str,
+                )
+            )
 
         return outlist
 
@@ -700,14 +735,16 @@ def gen_equity(portfolio, show=False):
             pos_data = cash_data[2]  # pos_data
             if pos_data:
                 ticker, qty, entry, current, pos_type, _ = pos_data
-                unrealized = ((current - entry) * qty if pos_type == "long" else
-                              (entry - current) * qty)
+                unrealized = (
+                    (current - entry) * qty
+                    if pos_type == "long"
+                    else (entry - current) * qty
+                )
                 print(
-                    f"{date}: entry={
-                        entry:.4f}, current={
-                        current:.4f}, unrealized_pnl={
-                        unrealized:.2f}, capital={
-                        cap:.2f}")
+                    f"""{date}: entry={entry:.4f}, current={current:.4f}, unrealized_pnl={
+                        unrealized:.2f
+                    }, capital={cap:.2f}"""
+                )
             else:
                 print(f"{date}: No position, capital={cap:.2f}")
 
@@ -742,14 +779,16 @@ def gen_equity(portfolio, show=False):
     mdf["pydate"] = mdf.date_obj.map(lambda x: pd.to_datetime(x).date())
 
     # Group by day and take last values
-    gdf = mdf.groupby(["pydate"]).agg({
-        "date_obj": "last",
-        "capital": "last",
-        "available_cash": "last",
-        "blocked_margin": "last",
-        "positions": "last",
-        "events": lambda x: "".join(x),
-    })
+    gdf = mdf.groupby(["pydate"]).agg(
+        {
+            "date_obj": "last",
+            "capital": "last",
+            "available_cash": "last",
+            "blocked_margin": "last",
+            "positions": "last",
+            "events": lambda x: "".join(x),
+        }
+    )
 
     # Fill missing days
     all_days = pd.date_range(mdf.pydate.min(), mdf.pydate.max(), freq="D")
@@ -758,14 +797,17 @@ def gen_equity(portfolio, show=False):
     ndf["capital"] = ndf["capital"].ffill()
     # Convert date_obj back to string format
     try:
-        ndf["date_obj"] = ndf["date_obj"].map(lambda x: utils.datetime_to_str(x)
-                                              if pd.notna(x) else x)
+        ndf["date_obj"] = ndf["date_obj"].map(
+            lambda x: utils.datetime_to_str(x) if pd.notna(x) else x
+        )
     except (NameError, AttributeError):
         ndf["date_obj"] = ndf["date_obj"].map(lambda x: str(x) if pd.notna(x) else x)
 
     if show:
         print("\n=== CFD/FX Equity Line ===")
-        print(ndf[["capital", "available_cash", "blocked_margin", "positions"]].head(10))
+        print(
+            ndf[["capital", "available_cash", "blocked_margin", "positions"]].head(10)
+        )
         print(f"Total rows: {len(ndf)}")
 
         # Show capital changes
@@ -839,14 +881,18 @@ def simple_test():
     # Show trade history
     trades_df = portfolio.get_tradelist()
     print("--- TRADE HISTORY ---")
-    print(trades_df[[
-        "ticker",
-        "position_type",
-        "open_price",
-        "close_price",
-        "net_profit",
-        "profit_pct",
-    ]])
+    print(
+        trades_df[
+            [
+                "ticker",
+                "position_type",
+                "open_price",
+                "close_price",
+                "net_profit",
+                "profit_pct",
+            ]
+        ]
+    )
     print()
     portfolio.basic_report()
 
@@ -857,8 +903,6 @@ def simple_test():
     df = portfolio.get_equity()
     df2t.render(df, to_file="eqt_short1.html")
     return portfolio
-
-
 
 
 def comprehensive_test():
@@ -945,12 +989,14 @@ def comprehensive_test():
 
         # Record portfolio value
         portfolio_value = portfolio.current_value()
-        equity_curve.append({
-            "date": date,
-            "price": price,
-            "portfolio_value": portfolio_value,
-            "signal": signal,
-        })
+        equity_curve.append(
+            {
+                "date": date,
+                "price": price,
+                "portfolio_value": portfolio_value,
+                "signal": signal,
+            }
+        )
 
         # Print key trading days
         if signal != "UPDATE":
@@ -964,16 +1010,20 @@ def comprehensive_test():
     # Show trade history
     trades_df = portfolio.get_tradelist()
     print("--- COMPLETE TRADE HISTORY ---")
-    print(trades_df[[
-        "ticker",
-        "position_type",
-        "open_date",
-        "close_date",
-        "open_price",
-        "close_price",
-        "net_profit",
-        "profit_pct",
-    ]].round(2))
+    print(
+        trades_df[
+            [
+                "ticker",
+                "position_type",
+                "open_date",
+                "close_date",
+                "open_price",
+                "close_price",
+                "net_profit",
+                "profit_pct",
+            ]
+        ].round(2)
+    )
 
     import df2tables as df2t
 
