@@ -20,7 +20,7 @@ A key feature is the generation of interactive HTML reports, which allow for eas
 
 So the full install command is:
 ```bash
-pip install antback df2tables xlreport
+pip install antback
 ```
 
 ### Demo
