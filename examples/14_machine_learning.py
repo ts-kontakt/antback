@@ -403,7 +403,7 @@ def main():
     # Configuration parameters
     TICKER_SYMBOL = "QQQ"
     TEST_PERIOD_DAYS = 600
-    TRAINING_MULTIPLIER = 4  # How much more training data than test data
+    TRAINING_MULTIPLIER = 3  # How much more training data than test data
     FORECAST_HORIZON_DAYS = 2
     FEATURE_WINDOW_SIZE = 90  # Lookback window for feature calculation
     MIN_TARGET_RETURN = 0.3  # Minimum acceptable return threshold
@@ -428,14 +428,14 @@ def main():
     # model_name = "Random Forest"
     
     # 3. LightGBM Classifier
-    # try:
-    #     from lightgbm import LGBMClassifier
-    #     prediction_model = LGBMClassifier(random_state=42, verbose=-1)
-    #     model_name = "LightGBM"
-    # except ImportError:
-    #     print("LightGBM not installed. Install with: pip install lightgbm")
-    #     prediction_model = DecisionTreeClassifier(random_state=42)
-    #     model_name = "Decision Tree (fallback)"
+    try:
+        from lightgbm import LGBMClassifier
+        prediction_model = LGBMClassifier(random_state=42, verbose=-1)
+        model_name = "LightGBM"
+    except ImportError:
+        print("LightGBM not installed. Install with: pip install lightgbm")
+        prediction_model = DecisionTreeClassifier(random_state=42)
+        model_name = "Decision Tree (fallback)"
     
     # 4. XGBoost Classifier
     # try:
@@ -472,7 +472,7 @@ def main():
             df2t.render(training_results.train_data, to_file=f'train_data_{model_name.lower().replace(" ", "_")}.html')
         except ImportError:
             print("df2tables not installed. Skipping training data visualization.")
-    
+ 
     # Initialize and run backtest
     test_portfolio = ab.Portfolio(
         cash=50000,

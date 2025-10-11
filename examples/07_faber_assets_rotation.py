@@ -145,7 +145,7 @@ def main():
 
     # Display performance reports
     backtest_results.basic_report()
-    backtest_results.full_report(title=f'Mebane Faber tactical asset rotation: {', '.join(tickers)}')
+    backtest_results.full_report(title=f'Mebane Faber tactical asset rotation: {str(tickers)}')
     # backtest_results.full_report('excel')
 
 

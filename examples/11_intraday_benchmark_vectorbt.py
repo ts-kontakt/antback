@@ -1,4 +1,5 @@
 import time
+import os
 import pandas as pd
 import antback as ab
 
@@ -105,8 +106,13 @@ def run_vbt(prices, vbt_mod, fast=10, slow=30, msg=""):
 
 
 def main():
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # Build the full path to the CSV file
+    csv_path = os.path.join(script_dir, "btc_1m.csv") 
+    
     print("Loading data...")
-    df = pd.read_csv("btc_1m.csv")
+    df = pd.read_csv(csv_path)
     df["close_time"] = pd.to_datetime(df["close_time"])
     df.set_index("close_time", inplace=True)
 
