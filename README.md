@@ -100,7 +100,7 @@ port.full_report('excel', outfile=f'{descr}_report.xlsx', title=descr)
 ```
 See detailed [excel report](https://github.com/ts-kontakt/antback/blob/main/examples/portfolio-report.xlsx) generated with above example.
 
-> **Optimization**: In fact, the average lengths in this case are slightly optimized; see: [examples/08_optimization.py](https://github.com/ts-kontakt/antback/blob/main/examples/07_optimization.py).
+> **Optimization**: In fact, the average lengths in this case are slightly optimized; see: [examples/08_optimization.py](https://github.com/ts-kontakt/antback/blob/main/examples/08_optimization.py).
 > The results may be even better if [trailing ATR stop](https://github.com/ts-kontakt/antback/blob/main/examples/04_atr_stop.py) is used for the sell signal instead of the averages.
 
 ## Core Components
