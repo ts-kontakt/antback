@@ -14,6 +14,33 @@ def timeit(func):
 
     return wrapper
 
+@timeit
+def sma_cross_standard(rows, sym, fast=10, slow=30):
+    """SMA crossover using python builtins"""
+    port = ab.Portfolio(10_000, single=True, fees=0.0015, allow_fractional=True)
+    roll = ab.RollingList(maxlen=slow)
+    cross = ab.new_cross_func()
+
+    for dt, px in rows:
+        roll.append(px)
+        vals = roll.values()
+        sig = None
+        if len(vals) >= slow:
+            fast_ma = sum(vals[-fast:]) / fast
+            slow_ma = sum(vals) / slow
+            side = cross(fast_ma, slow_ma)
+
+            if side == "up":
+                sig = "buy"
+            elif side == "down":
+                sig = "sell"
+
+        port.process(sig, sym, dt, px)
+
+    rep = port.basic_report(show=False)
+    print(rep[1])
+    return rep
+
 
 @timeit
 def sma_cross_np(rows, sym, fast=10, slow=30):
@@ -103,6 +130,7 @@ def main():
     closes = yf.Ticker(sym).history(period="30y")["Close"]
     rows = tuple(zip(closes.index, closes.values))
 
+    sma_cross_standard(rows, sym)
     sma_cross_np(rows, sym)
     sma_cross_talipp(rows, sym)
     sma_cross_antback(rows, sym)
