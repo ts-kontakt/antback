@@ -271,8 +271,9 @@ class Portfolio:
             raise ValueError("Price must be positive")
 
         if ticker in self.positions:
-            self.positions[ticker][-2] = date_obj
-            self.positions[ticker][-1] = price
+            _ticker_pos = self.positions[ticker]
+            _ticker_pos[-2] = date_obj
+            _ticker_pos[-1] = price
 
         self.save_positions(date_obj)
 

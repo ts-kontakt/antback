@@ -4,183 +4,244 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Antback Trading Dashboard</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pure/3.0.0/pure-min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pure/3.0.0/grids-min.css">
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <link href="https://cdn.datatables.net/2.3.4/css/dataTables.dataTables.min.css" rel="stylesheet">
-    <script src="https://cdn.datatables.net/2.3.4/js/dataTables.min.js"></script><!--[column_control-->
-    <link href="https://cdn.datatables.net/columncontrol/1.1.0/css/columnControl.dataTables.min.css" rel="stylesheet">
-    <script src="https://cdn.datatables.net/columncontrol/1.1.0/js/dataTables.columnControl.min.js"></script><!--column_control]-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pure/3.0.0/pure-min.css"><!--[scripts-->
+    <link href="https://cdn.datatables.net/v/dt/jq-3.7.0/dt-2.3.4/b-3.2.5/b-colvis-3.2.5/b-html5-3.2.5/cr-2.1.2/cc-1.1.1/datatables.min.css" rel="stylesheet" integrity="sha384-wSlKDmHlZXDO0o5ZHsloB4i8j/JsaA8Jx0uiAW7ECdNdWBoJZXeLnYbh7yCB09Os" crossorigin="anonymous">
+    <script src="https://cdn.datatables.net/v/dt/jq-3.7.0/dt-2.3.4/b-3.2.5/b-colvis-3.2.5/b-html5-3.2.5/cr-2.1.2/cc-1.1.1/datatables.min.js" integrity="sha384-Db6ik1fBYSPYBHoWXu+DJTvPGs+KGoiEMJC36Hp2uJfaHwUWOCZvWxaCnc/4rEBs" crossorigin="anonymous"></script><!--scripts]-->
 
     <style>
-         body {
-            line-height: 1.4;
-            font-family: 'Arial', 'Helvetica Neue', Helvetica, sans-serif;
-            margin: 0;
-            padding: 0;
-            color: #333;
-            background-color: #fff;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            text-rendering: optimizeLegibility;
-        }
+    body {
+    margin: 0;
+    padding: 0;
+     font-size: 0.875rem;
+        /* About 14px */
+        line-height: 1.4;
+        font-family: "Helvetica Neue",
+            Arial,
+            sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
+    }
 
-       .pure-table td, .pure-table th {
-            color: black;
-            padding: 0.3em 0.9em;
-            text-align:left;
-       
-       }
-       h3 { font-weight: 600;}
+    h3 {
+    font-weight: 600;
+    }
 
-        /* datatables */
+    /* ===== TABLE STYLES ===== */
+    table {
+    width: fit-content;
+    border-collapse: collapse;
+    font-size: 10pt;
+    }
 
-        table.dataTable.display tbody td span {
-            float: right;
-        }
-        
-        table.dataTable.display tbody td  {
-           font-family: 'Arial', 'Helvetica Neue', Helvetica, sans-serif;
-           white-space:nowrap;
-        }
+    .pure-table td,
+    .pure-table th {
+    color: black;
+    padding: 0.3em 0.9em;
+    text-align: left;
+    }
 
-        
+    /* ===== DATATABLES STYLES ===== */
+    table.dataTable tbody td {
+    font-family: 'Arial', 'Helvetica Neue', Helvetica, sans-serif;
+    white-space: nowrap;
+    }
+    
+    table.dataTable thead td {
+        padding: 0.1rem 0px 0.1rem 0.4rem !important;
 
-        table.dataTable span.dtcc span.dtcc-button-icon {
-            color: #000ee7;
-            line-height: var(--dtcc-button-icon_size);
-        }
-        
-        
-        
+    }
+    
+    
 
-        :root {
-            --dtcc-button_opacity: 0.3;
-        }
+    table.dataTable.display tbody td span {
+    float: right;
+    }
 
-        .dt-info {
-            padding: 0;
-            font-size: 9pt;
-            color: gray;
-        }
+    table.dataTable span.dtcc span.dtcc-button-icon {
+    color: #000ee7;
+    line-height: var(--dtcc-button-icon_size);
+    }
 
-        span.dt-column-title {
-            white-space: wrap;
-            font-weight:600;
-            line-height: normal;
-        }
+    span.dt-column-title {
+    white-space: wrap;
+    font-weight: 600;
+    line-height: normal;
+    }
 
-        /* datatables */
+    .dt-length { font-size: 9pt; }
 
-        .dashboard {
-            width: 100%;
-            background: white;
-        }
+    .dt-info {
+    padding: 0;
+    font-size: 9pt;
+    color: gray;
+    }
 
-        .top-row {
-            display: block;
-            max-height: 60vh;
-            padding-left: 1rem;
-            padding-top: 0;
+    /* ===== DASHBOARD LAYOUT ===== */
+    .dashboard {
+    width: 100%;
+    background: white;
+    }
 
-        }
+    .top-row {
+    display: block;
+    max-height: 60vh;
+    padding-left: 1rem;
+    padding-top: 0;
+    }
 
-        .card {
-            background: white;
-            border: 1px solid #ddd;
-            border-right: none;
-            height: 60vh;
-            overflow-y: scroll;
-        }
+    .bottom-row {
+    padding: 1rem;
+    background: white;
+    border: 1px solid #ddd;
+    overflow-y: auto;
+    }
 
-        .card:last-child {
-            border-right: 1px solid #ddd;
-        }
+    /* ===== CARD COMPONENTS ===== */
+    .card {
+    background: white;
+    border: 1px solid #ddd;
+    border-right: none;
+    height: 60vh;
+    overflow-y: scroll;
+    }
 
-        .card.chart-card {
-            border-left: 1px solid #ddd;
-            padding-right: 1rem;
-        }
+    .card:last-child {
+    border-right: 1px solid #ddd;
+    }
 
-        .card h3 {
-            color: #333;
-            margin: 0 0 10px 0;
-            font-size: 1em;
-            font-weight: 600;
-            text-align: center;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #ddd;
-        }
+    .card.chart-card {
+    border-left: 1px solid #ddd;
+    padding-right: 1rem;
+    }
 
-        table {
-            width: fit-content;
-            border-collapse: collapse;
-            font-size: 0.8em;
-        }
+    .card h3 {
+    color: #333;
+    margin: 0 0 10px 0;
+    font-size: 1em;
+    font-weight: 600;
+    text-align: center;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #ddd;
+    }
 
-        .negative {
-            color: rgb(238, 0, 0);
-            font-weight: 600;
-        }
+    /* ===== CHART & TRADES COMPONENTS ===== */
+    .chart-container {
+    width: 100%;
+    background: white;
+    }
 
-        .positive {
-            color:rgb(17, 102, 17);
-            font-weight: 600;
-        }
+    .trades-table-container {
+    background: white;
+    border-left: 1px solid #ddd;
+    padding-top: 2rem;
+    }
 
-        .chart-container {
-            width: 100%;
-            background: white;
-        }
+    .trades-table {
+    width: 100%;
+    }
 
-        .bottom-row {
-            padding: 1rem;
-            background: white;
-            border: 1px solid #ddd;
-            overflow-y: auto;
-        }
+    /* ===== UTILITY CLASSES ===== */
+    .negative {
+    color: rgb(238, 0, 0);
+    font-weight: 600;
+    }
 
-        .trades-table-container {
-            background: white;
-            border-left: 1px solid #ddd;
-            padding-top: 2rem;
-        }
+    .positive {
+    color: rgb(17, 102, 17);
+    font-weight: 600;
+    }
+
+    /* ===== BUTTON STYLES ===== */
+    .custom_btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 3px 4px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    background: #f7f7f7;
+    border-radius: 3px;
+    }
+
+    .custom_btn .icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    }
+
+    .custom_btn:hover {
+    background: #e9e9e9;
+    }
+
+    button.dt-button {
+    padding: 0.2rem 0.5rem !important;
+    font-size: 9pt !important;
+    }
+
+    div.dt-buttons {
+    font-size: 9pt !important;
+    margin-right: 1rem;
+    }
+
+    /* ===== RESPONSIVE DESIGN ===== */
+    @media (max-width: 1200px) {
+    .top-row {
+    height: 80vh;
+    }
+
+    .bottom-row {
+    height: 20vh;
+    }
+
+    .chart-container {
+    height: calc(80vh - 50px);
+    }
+    }
+
+    @media (max-width: 768px) {
+    .top-row {
+    height: 100vh;
+    }
+
+    .bottom-row {
+    height: auto;
+    min-height: 30vh;
+    }
+
+    .chart-container {
+    height: calc(100vh - 50px);
+    }
+    }
+
+    /* Default state */
+    .dt-input {
+        /*  border: 2px solid #ccc;
+        padding: 6px 10px; */
+        border-radius: 6px;
+        transition: all 0.2s ease-in-out;
+
+    }
+
+    /* Highlight only when user typed something */
+    input.dt-input:not(:placeholder-shown) {
+        background-color: #e0f0ff !important;
+        /* light blue */
+        border-color: #66b2ff !important;
+        font-weight: bold;
+    }
+
+    input[type="search"]::-webkit-search-cancel-button {
+        -webkit-appearance: auto;
+        appearance: auto;
+        cursor: pointer;
+    }
 
 
-        .trades-table {
-            width: 100%;
+
             
-        }
-
-
-        @media (max-width: 1200px) {
-            .top-row {
-                height: 80vh;
-            }
-
-            .bottom-row {
-                height: 20vh;
-            }
-
-            .chart-container {
-                height: calc(80vh - 50px);
-            }
-        }
-
-        @media (max-width: 768px) {
-            .top-row {
-                height: 100vh;
-            }
-
-            .bottom-row {
-                height: auto;
-                min-height: 30vh;
-            }
-
-            .chart-container {
-                height: calc(100vh - 50px);
-            }
-
+             
     </style>
 </head>
 <body>
@@ -321,120 +382,215 @@
                 </div>
             </div>
             <script type="text/javascript">
+            /* global DataTable, $, jQuery  */
             (function() {
-
-                function isColumnControlLoaded() {
-                    return typeof $.fn.dataTable !== 'undefined' &&
-                        typeof $.fn.dataTable.ColumnControl !== 'undefined';
-                }
-
-
-                function _anyNumber(a) {
-                    var reg = /[+-]?((\d+(\.\d*)?)|\.\d+)([eE][+-]?[0-9]+)?/;
-                    if (typeof a === "string") {
-                        a = a.replace(",", ".").replace(/ /g, '').match(reg);
-                        a = a !== null ? parseFloat(a[0]) : Number.POSITIVE_INFINITY;
+            /* https://datatables.net/extensions/columncontrol/examples/styling/alignmentHeaderOnly.html */
+            DataTable.type("num", "className", "dt-body-right");
+            DataTable.type("num-fmt", "className", "dt-body-right");
+            DataTable.type("date", "className", "dt-body-right");
+            if (DataTable.ColumnControl) {
+                const active_funnel = '<svg id="funnel_menu_a" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="-3 -3 30 30" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-funnel-icon lucide-funnel"> <rect x="-4" y="-4" width="32" height="32" fill="#0B57D0"/> <path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"/> </svg> ';
+                const inactive_funnel = '<svg xmlns="http://www.w3.org/2000/svg" id="funnel_menu_p" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-filter-icon lucide-list-filter"><path d="M2 5h20"/><path d="M6 12h12"/><path d="M9 19h6"/></svg>';
+                DataTable.ColumnControl.icons["menu"] = inactive_funnel;
+                DataTable.ColumnControl.Button.prototype._checkActive = function() {
+                    var curr_icon = this._dom.icon.innerHTML || "";
+                    /* let is_top_menu = !this._dom.dropdownDisplay;     */
+                    if (this._s.active === true || Object.values(this._s.activeList).includes(true)) {
+                        this._dom.state.innerHTML = DataTable.ColumnControl.icons.tick;
+                        this._dom.button.classList.add("dtcc-button_active");
+                        if (curr_icon.includes("funnel_menu")) {
+                            this._dom.icon.innerHTML = active_funnel;
+                        }
+                    } else {
+                        this._dom.state.innerHTML = "";
+                        this._dom.button.classList.remove("dtcc-button_active");
+                        if (curr_icon.includes("funnel_menu")) {
+                            this._dom.icon.innerHTML = inactive_funnel;
+                        }
                     }
-                    return a;
+                    return this;
+                };
+            }
+
+            function deepMerge(target, source) {
+                for (const key in source) {
+                    if (source[key] && typeof source[key] === "object" && !Array.isArray(source[key])) {
+                        if (!target[key] || typeof target[key] !== "object" || Array.isArray(target[key])) {
+                            target[key] = {};
+                        }
+                        deepMerge(target[key], source[key]);
+                    } else {
+                        target[key] = source[key];
+                    }
                 }
+                return target;
+            }
 
+            function _anyNumber(a) {
+                var reg = /[+-]?((\d+(\.\d*)?)|\.\d+)([eE][+-]?[0-9]+)?/;
+                if (typeof a === "string") {
+                    a = a.replace(",", ".").replace(/ /g, "").match(reg);
+                    a = a !== null ? parseFloat(a[0]) : Number.POSITIVE_INFINITY;
+                }
+                return a;
+            }
+            jQuery.extend(jQuery.fn.dataTableExt.oSort, {
+                "num-html-pre": function(a) {
+                    var x = String(a).replace(/<[\s\S]*?>/g, "");
+                    return parseFloat(_anyNumber(x));
+                },
+                "num-html-asc": function(a, b) {
+                    return a < b ? -1 : a > b ? 1 : 0;
+                },
+                "num-html-desc": function(a, b) {
+                    return a < b ? 1 : a > b ? -1 : 0;
+                }
+            });
+            const add_expand_btn = /*[add_expand_btn*/ true /*add_expand_btn]*/ ;
 
-                jQuery.extend(jQuery.fn.dataTableExt.oSort, {
-                    "num-html-pre": function(a) {
-                        var x = String(a).replace(/<[\s\S]*?>/g, "");
-                        return parseFloat(_anyNumber(x));
-                    },
-
-                    "num-html-asc": function(a, b) {
-                        return a < b ? -1 : a > b ? 1 : 0;
-                    },
-
-                    "num-html-desc": function(a, b) {
-                        return a < b ? 1 : a > b ? -1 : 0;
-                    },
-                });
-                const render_num = (data, type) => {
-                    const number = DataTable.render.number(" ", ",", 2).display(data);
-
-                    if (type !== "display") return number;
-
-                    const color = data < 0 ? "red" : "black";
-                    return '<span style="color:' + color + '">' + number + "</span>";
-                };
-
-                const select_cols = /*[select_cols*/ [];
-                /*select_cols]*/
-                const tab_data = /*[tab_data*/ [["GOOG", "2020-01-01 09:31:01", "2020-01-09 09:30:05", 86.17, 85.94, 231, 19904.62, -112.69, -0.27, -53.06, 29.86, 29.78, 59.63, "2020 Trade 5"], ["AAPL", "2020-01-01 09:30:00", "2020-01-10 09:30:05", 94.09, 93.16, 212, 19946.9, -257.3, -0.99, -197.76, 29.92, 29.62, 59.54, "2020 Trade 6"], ["AMZN", "2020-01-01 09:33:03", "2020-01-10 09:30:06", 116.87, 118.13, 170, 19867.19, 155.83, 1.09, 215.75, 29.8, 30.12, 59.93, "2020 Trade 7"], ["MSFT", "2020-01-01 09:34:04", "2020-01-14 09:30:06", 107.51, 109.5, 185, 19888.61, 309.57, 1.86, 369.79, 29.83, 30.39, 60.22, "2020 Trade 9"], ["AAPL", "2020-01-14 09:30:05", "2020-01-15 09:30:05", 92.19, 92.99, 74, 6821.99, 38.66, 0.87, 59.22, 10.23, 10.32, 20.55, "2020 Trade 10"], ["TSLA", "2020-01-01 09:32:02", "2020-01-22 09:30:05", 90.99, 95.64, 219, 19926.2, 957.97, 5.12, 1019.28, 29.89, 31.42, 61.31, "2020 Trade 12"], ["AMZN", "2020-01-21 09:30:05", "2020-01-31 09:30:05", 117.4, 119.42, 79, 9274.99, 130.91, 1.71, 158.98, 13.91, 14.15, 28.06, "2020 Trade 15"], ["MSFT", "2020-01-22 09:30:06", "2020-02-03 09:30:05", 109.52, 110.57, 247, 27052.29, 175.85, 0.95, 257.39, 40.58, 40.96, 81.54, "2020 Trade 16"], ["MSFT", "2020-02-05 09:30:05", "2020-02-11 09:30:05", 109.58, 112.08, 184, 20163.29, 397.46, 2.27, 458.63, 30.24, 30.93, 61.18, "2020 Trade 18"], ["AAPL", "2020-01-28 09:30:05", "2020-02-24 09:30:05", 90.95, 87.61, 300, 27284.62, -1083.15, -3.68, -1002.8, 40.93, 39.42, 80.35, "2020 Trade 21"], ["MSFT", "2020-02-20 09:30:05", "2020-03-12 09:30:05", 111.87, 110.58, 233, 26066.26, -379.66, -1.16, -301.91, 39.1, 38.65, 77.75, "2020 Trade 23"], ["MSFT", "2020-04-03 09:30:05", "2020-04-13 09:30:05", 110.44, 106.03, 94, 10381.75, -445.33, -4.0, -414.8, 15.57, 14.95, 30.52, "2020 Trade 26"], ["GOOG", "2020-03-17 09:30:05", "2020-04-15 09:30:05", 85.99, 86.13, 101, 8684.99, -11.57, 0.17, 14.51, 13.03, 13.05, 26.08, "2020 Trade 27"], ["TSLA", "2020-03-05 09:30:05", "2020-04-20 09:30:05", 95.62, 98.99, 159, 15204.25, 487.97, 3.51, 534.38, 22.81, 23.61, 46.41, "2020 Trade 28"], ["AMZN", "2020-02-13 09:30:05", "2020-04-23 09:30:05", 117.75, 126.74, 134, 15778.24, 1155.82, 7.64, 1204.97, 23.67, 25.47, 49.14, "2020 Trade 30"], ["AAPL", "2020-05-18 09:30:05", "2020-05-20 09:30:05", 84.17, 83.87, 290, 24409.62, -158.99, -0.35, -85.89, 36.61, 36.49, 73.1, "2020 Trade 32"], ["TSLA", "2020-05-20 09:30:06", "2020-06-01 09:30:06", 105.67, 105.2, 259, 27369.03, -203.73, -0.45, -121.8, 41.05, 40.87, 81.92, "2020 Trade 35"], ["AAPL", "2020-06-01 09:30:05", "2020-06-11 09:30:05", 85.15, 84.96, 93, 7918.68, -41.53, -0.22, -17.8, 11.88, 11.85, 23.73, "2020 Trade 37"], ["TSLA", "2020-06-11 09:30:06", "2020-06-24 09:30:05", 105.6, 107.88, 113, 11932.71, 221.54, 2.16, 257.73, 17.9, 18.29, 36.18, "2020 Trade 40"], ["MSFT", "2020-04-21 09:30:05", "2020-06-25 09:30:05", 105.72, 113.89, 367, 38800.03, 2875.99, 7.72, 2996.88, 58.2, 62.7, 120.9, "2020 Trade 41"], ["AAPL", "2020-06-23 09:30:05", "2020-06-26 09:30:05", 84.25, 84.17, 146, 12300.78, -49.3, -0.1, -12.41, 18.45, 18.43, 36.88, "2020 Trade 42"], ["GOOG", "2020-06-10 09:30:05", "2020-07-15 09:30:05", 88.96, 85.97, 109, 9696.28, -354.58, -3.36, -325.98, 14.54, 14.06, 28.6, "2020 Trade 46"], ["TSLA", "2020-07-07 09:30:05", "2020-07-20 09:30:05", 109.03, 107.78, 319, 34781.07, -501.59, -1.14, -397.85, 52.17, 51.57, 103.75, "2020 Trade 47"], ["MSFT", "2020-07-03 09:30:05", "2020-07-24 09:30:05", 114.87, 115.22, 146, 16771.09, 1.17, 0.31, 51.56, 25.16, 25.23, 50.39, "2020 Trade 48"], ["AMZN", "2020-07-07 09:30:06", "2020-08-26 09:30:05", 116.91, 117.87, 140, 16367.49, 85.59, 0.82, 134.89, 24.55, 24.75, 49.3, "2020 Trade 52"], ["AMZN", "2020-09-02 09:30:05", "2020-09-09 09:30:05", 117.34, 118.47, 174, 20417.19, 134.38, 0.96, 195.93, 30.63, 30.92, 61.55, "2020 Trade 54"], ["GOOG", "2020-09-21 09:30:05", "2020-09-23 09:30:05", 89.94, 89.65, 198, 17808.45, -112.03, -0.33, -58.69, 26.71, 26.62, 53.34, "2020 Trade 56"], ["MSFT", "2020-07-27 09:30:05", "2020-09-23 09:30:06", 114.5, 111.27, 360, 41218.65, -1283.04, -2.82, -1161.12, 61.83, 60.09, 121.91, "2020 Trade 57"], ["TSLA", "2020-08-20 09:30:05", "2020-10-05 09:30:05", 107.99, 109.48, 56, 6047.31, 65.12, 1.38, 83.38, 9.07, 9.2, 18.27, "2020 Trade 58"], ["AAPL", "2020-07-29 09:30:05", "2020-10-28 09:30:05", 90.9, 90.29, 140, 12726.64, -124.41, -0.68, -86.36, 19.09, 18.96, 38.05, "2020 Trade 62"], ["GOOG", "2020-10-12 09:30:05", "2020-11-24 09:30:05", 91.77, 92.59, 209, 19179.6, 114.77, 0.9, 172.57, 28.77, 29.03, 57.8, "2020 Trade 65"], ["AAPL", "2020-10-30 09:30:05", "2020-12-08 09:30:05", 90.87, 94.92, 224, 20354.83, 845.11, 4.46, 907.53, 30.53, 31.89, 62.43, "2020 Trade 66"], ["AMZN", "2020-10-21 09:30:05", "2020-12-16 09:30:05", 124.08, 135.69, 57, 7072.79, 639.09, 9.35, 661.3, 10.61, 11.6, 22.21, "2020 Trade 67"], ["TSLA", "2020-11-20 09:30:05", "2020-12-21 09:30:05", 114.07, 119.62, 30, 3422.23, 155.8, 4.86, 166.32, 5.13, 5.38, 10.52, "2020 Trade 68"], ["GOOG", "2020-12-22 09:30:05", "2020-12-29 09:30:05", 85.55, 85.43, 192, 16425.38, -71.83, -0.14, -22.58, 24.64, 24.6, 49.24, "2020 Trade 70"], ["MSFT", "2020-10-06 09:30:05", "2021-01-06 09:30:05", 113.41, 110.06, 294, 33342.19, -1082.66, -2.95, -984.1, 50.01, 48.54, 98.55, "2021 Trade 71"], ["GOOG", "2021-01-07 09:30:05", "2021-01-12 09:30:05", 86.96, 86.52, 317, 27565.05, -221.18, -0.5, -138.69, 41.35, 41.14, 82.49, "2021 Trade 74"], ["MSFT", "2021-01-11 09:30:05", "2021-01-18 09:30:05", 110.76, 110.9, 214, 23701.74, -40.73, 0.13, 30.43, 35.55, 35.6, 71.15, "2021 Trade 76"], ["TSLA", "2021-01-12 09:30:06", "2021-01-25 09:30:06", 118.14, 116.27, 104, 12286.58, -231.08, -1.58, -194.51, 18.43, 18.14, 36.57, "2021 Trade 79"], ["GOOG", "2021-01-20 09:30:05", "2021-01-26 09:30:05", 86.83, 85.88, 487, 42284.59, -587.47, -1.09, -461.3, 63.43, 62.73, 126.16, "2021 Trade 80"], ["AAPL", "2021-01-25 09:30:05", "2021-02-08 09:30:05", 94.84, 95.33, 246, 23330.39, 51.23, 0.52, 121.4, 35.0, 35.18, 70.17, "2021 Trade 85"], ["GOOG", "2021-02-03 09:30:05", "2021-02-24 09:30:05", 85.34, 82.69, 61, 5205.57, -176.9, -3.1, -161.52, 7.81, 7.57, 15.37, "2021 Trade 86"], ["MSFT", "2021-01-26 09:30:07", "2021-03-01 09:30:05", 107.69, 105.9, 155, 16691.38, -326.13, -1.66, -276.47, 25.04, 24.62, 49.66, "2021 Trade 88"], ["AAPL", "2021-02-25 09:30:05", "2021-03-09 09:30:05", 94.76, 92.24, 112, 10613.48, -313.83, -2.66, -282.41, 15.92, 15.5, 31.42, "2021 Trade 90"], ["GOOG", "2021-03-04 09:30:05", "2021-03-11 09:30:05", 82.31, 83.48, 90, 7407.72, 82.88, 1.42, 105.26, 11.11, 11.27, 22.38, "2021 Trade 92"], ["AAPL", "2021-03-10 09:30:05", "2021-03-15 09:30:05", 92.92, 94.15, 260, 24157.96, 247.61, 1.33, 320.56, 36.24, 36.72, 72.95, "2021 Trade 93"], ["GOOG", "2021-03-16 09:30:05", "2021-03-17 09:30:05", 84.32, 84.52, 87, 7336.06, -5.04, 0.23, 16.99, 11.0, 11.03, 22.03, "2021 Trade 96"], ["MSFT", "2021-03-15 09:30:06", "2021-03-22 09:30:05", 108.04, 107.9, 100, 10803.97, -46.32, -0.13, -13.93, 16.21, 16.19, 32.39, "2021 Trade 97"], ["AAPL", "2021-03-25 09:30:05", "2022-12-30 09:30:05", 93.18, 100.25, 272, 25345.41, 1883.95, 7.58, 1921.96, 38.02, 0.0, 38.02, "*opened"], ["TSLA", "2021-01-26 09:30:06", "2022-12-30 09:30:07", 115.51, 137.86, 238, 27490.45, 5277.81, 19.35, 5319.04, 41.24, 0.0, 41.24, "*opened"], ["AMZN", "2021-01-28 09:30:05", "2022-12-30 09:30:08", 135.31, 142.09, 122, 16507.58, 803.09, 5.01, 827.85, 24.76, 0.0, 24.76, "*opened"], ["MSFT", "2021-03-25 09:30:06", "2022-12-30 09:30:09", 106.84, 120.41, 74, 7906.42, 992.34, 12.7, 1004.2, 11.86, 0.0, 11.86, "*opened"]]
-            /*tab_data]*/
-
-                const columns =
-                    /*[tab_columns*/
-            [{"title": "ticker", "orderable": true, "columnControl": ["order", ["title", "searchList"]]}, {"title": "open date", "searchable": true, "orderable": true, "columnControl": ["order", ["title", "search"]]}, {"title": "close date", "searchable": true, "orderable": true, "columnControl": ["order", ["title", "search"]]}, {"title": "buy price", "searchable": true, "orderable": true, "columnControl": ["order", ["title", "search"]]}, {"title": "sell price", "searchable": true, "orderable": true, "columnControl": ["order", ["title", "search"]]}, {"title": "quantity", "searchable": true, "orderable": true, "columnControl": ["order", ["title", "search"]]}, {"title": "position size", "searchable": true, "orderable": true, "columnControl": ["order", ["title", "search"]]}, {"title": "net profit", "searchable": true, "orderable": true, "columnControl": ["order", ["title", "search"]], "render": render_num, "type": "num-html"}, {"title": "profit pct", "searchable": true, "orderable": true, "columnControl": ["order", ["title", "search"]], "render": render_num, "type": "num-html"}, {"title": "gross profit", "searchable": true, "orderable": true, "columnControl": ["order", ["title", "search"]], "render": render_num, "type": "num-html"}, {"title": "buy fees", "searchable": true, "orderable": true, "columnControl": ["order", ["title", "search"]]}, {"title": "sell fees", "searchable": true, "orderable": true, "columnControl": ["order", ["title", "search"]]}, {"title": "total fees", "searchable": true, "orderable": true, "columnControl": ["order", ["title", "search"]]}, {"title": "log msg", "searchable": true, "orderable": true, "columnControl": ["order", ["title", "search"]]}]
-            /*tab_columns]*/
-
-                const search_columns = /*[search_columns*/ ["ticker", "open_date", "close_date", "log_msg"]
-            /*search_columns]*/
-
-
-
-                DataTable.defaults.layout = {
-                    topStart: "info",
-                    top1Start: "search",
-                    topEnd: null,
-                    bottomStart: null,
-                    bottomEnd: null,
-                    bottom: "paging",
-                };
-                /*[table_id*/
-                const TABLE_ID = "pd_datatab";
-                /*table_id]*/
-
-                const build_table = function() {
-                    const table = $("#" + TABLE_ID).DataTable({
-                        data: tab_data,
-                        autoWidth: /*[auto_width*/
-            true
-            /*auto_width]*/ ,
-                        columns: columns,
-//~                         pageLength: 200,
-                        responsive: true,
-                        "paging": true,
-//~       
-                        "scrollX": "95vw",
-                        order: [],
-                        language: {
-                            search: '_INPUT_',
-                            searchPlaceholder: 'Search...'
-                        },
-                        initComplete: function() {
-                            const searchableColumns = search_columns;
-                            const searchNote = $("<p>")
-                                .css({
-                                    "margin-bottom": "10px",
-                                    "font-size": "0.7rem",
-                                    color: "#666",
-                                })
-                                .text(
-                                    "General search is enabled for: " +
-                                    searchableColumns.join(", "),
-                                );
-                            $("#pd_datatab_wrapper").prepend(searchNote);
-                        },
+            function search_info() {
+                if (search_columns || search_columns.length > 0) {
+                    const searchableColumns = search_columns;
+                    let search_msg = "[" + searchableColumns.map(col => `'${col}'`).join(", ") + "]";
+                    if (search_msg.length > 150) {
+                        search_msg = search_msg.slice(0, 150) + "...";
+                    }
+                    const searchNote = $("<span>").css({
+                        margin: "0.5rem",
+                        "font-size": "0.7rem",
+                        "font-style": "italic",
+                        display: "inline-flex",
+                        color: "#667"
+                    }).text(search_msg);
+                    $("#" + TABLE_ID + "_wrapper" + " input.dt-input").after(searchNote);
+                }
+                if (add_expand_btn) {
+                    var dn_icon = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5e5c64" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>';
+                    var up_icon = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5e5c64" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-up"><path d="m18 15-6-6-6 6"/></svg>';
+                    var expand_butt = '<button class="custom_btn" type="button" title="Show tools"><span class="icon">' + dn_icon + "</span></button>";
+                    var tools = $("<span>").css({
+                        display: "flex",
+                        right: "",
+                        "font-size": "8pt"
+                    }).html(expand_butt);
+                    $("#" + TABLE_ID + "_info").before(tools);
+                    $("div.dt-buttons").hide();
+                    $("div.dt-length").hide();
+                    tools.on("click", function(event) {
+                        event.preventDefault();
+                        $("div.dt-buttons").toggle();
+                        $("div.dt-length").toggle();
+                        var iconSpan = $(this).find(".icon");
+                        var button = $(this).find(".custom_btn");
+                        var isDown = iconSpan.html().indexOf("chevron-down") !== -1;
+                        if (isDown) {
+                            iconSpan.html(up_icon);
+                            button.attr("title", "Hide tools");
+                        } else {
+                            iconSpan.html(dn_icon);
+                            button.attr("title", "Show tools");
+                        }
                     });
-                };
-                $(document).ready(function() {
-                    build_table();
-
+                }
+            }
+            const render_precision = /*[precision*/ 2 /*precision]*/ ;
+            var thousands = "";
+            var decimal = ".";
+            const render_num = (data, type) => {
+                if (data === null) {
+                    return null;
+                }
+                const number = DataTable.render.number(thousands, decimal, render_precision).display(data);
+                if (type !== "display") return number;
+                const color = data < 0 ? "red" : "black";
+                return '<span style="color:' + color + '">' + number + "</span>";
+            };
+            const tab_data =
+                /*[tab_data*/
+            [["GOOG","2020-01-01 09:31:01","2020-01-02 09:30:05",83.66,82.97,238,19911.95,-225.5,-0.83,-166.01,29.87,29.62,59.49,"2020 Trade 5"],["AMZN","2020-01-01 09:33:03","2020-01-03 09:30:05",95.79,96.67,208,19923.99,122.46,0.92,182.5,29.89,30.16,60.05,"2020 Trade 6"],["MSFT","2020-01-01 09:34:04","2020-01-07 09:30:05",119.12,118.09,167,19892.37,-230.91,-0.86,-171.49,29.84,29.58,59.42,"2020 Trade 7"],["AAPL","2020-01-01 09:30:00","2020-01-08 09:30:05",110.98,110.78,179,19864.8,-94.81,-0.18,-35.27,29.8,29.74,59.54,"2020 Trade 8"],["MSFT","2020-01-09 09:30:05","2020-01-10 09:30:05",118.03,119.01,306,36116.57,190.71,0.83,299.51,54.17,54.62,108.8,"2020 Trade 10"],["AAPL","2020-01-16 09:30:05","2020-01-17 09:30:05",110.41,109.35,88,9716.22,-122.11,-0.96,-93.1,14.57,14.43,29.01,"2020 Trade 13"],["MSFT","2020-01-13 09:30:05","2020-01-23 09:30:05",117.9,116.9,155,18275.09,-210.09,-0.85,-155.5,27.41,27.18,54.59,"2020 Trade 15"],["TSLA","2020-01-01 09:32:02","2020-01-30 09:30:05",98.58,96.73,202,19912.51,-433.18,-1.88,-374.0,29.87,29.31,59.18,"2020 Trade 16"],["TSLA","2020-02-05 09:30:05","2020-02-17 09:30:05",99.93,99.96,318,31776.69,-83.81,0.04,11.53,47.67,47.68,95.35,"2020 Trade 18"],["AAPL","2020-03-03 09:30:05","2020-03-10 09:30:05",110.55,111.32,144,15919.23,62.36,0.69,110.28,23.88,24.04,47.92,"2020 Trade 22"],["GOOG","2020-02-27 09:30:05","2020-03-10 09:30:06",83.87,83.77,219,18367.11,-77.28,-0.12,-22.21,27.55,27.52,55.07,"2020 Trade 23"],["TSLA","2020-03-03 09:30:06","2020-04-03 09:30:05",96.91,101.11,96,9303.12,374.58,4.33,403.09,13.95,14.56,28.51,"2020 Trade 24"],["AMZN","2020-01-17 09:30:06","2020-04-14 09:30:06",94.37,96.76,236,22271.55,495.22,2.53,562.88,33.41,34.25,67.66,"2020 Trade 27"],["TSLA","2020-04-14 09:30:05","2020-04-21 09:30:05",98.74,98.98,138,13626.25,-7.95,0.24,32.98,20.44,20.49,40.93,"2020 Trade 29"],["AMZN","2020-04-20 09:30:05","2020-05-06 09:30:05",96.99,96.49,318,30842.45,-252.5,-0.52,-160.21,46.26,46.02,92.29,"2020 Trade 30"],["GOOG","2020-04-06 09:30:05","2020-05-12 09:30:05",82.46,84.03,268,22098.44,355.0,1.91,421.93,33.15,33.78,66.93,"2020 Trade 32"],["AMZN","2020-05-08 09:30:05","2020-05-15 09:30:05",95.48,96.41,255,24346.57,164.69,0.98,238.09,36.52,36.88,73.4,"2020 Trade 33"],["AAPL","2020-05-29 09:30:05","2020-06-16 09:30:05",111.59,107.54,332,37046.91,-1453.9,-3.63,-1344.78,55.57,53.55,109.12,"2020 Trade 36"],["TSLA","2020-05-27 09:30:05","2020-06-19 09:30:05",100.23,100.54,245,24555.22,3.41,0.31,77.2,36.83,36.95,73.78,"2020 Trade 37"],["TSLA","2020-07-09 09:30:05","2020-08-10 09:30:05",100.13,99.53,349,34943.75,-313.03,-0.6,-208.51,52.42,52.1,104.52,"2020 Trade 40"],["AMZN","2020-07-28 09:30:05","2020-08-27 09:30:05",99.17,101.15,197,19535.69,331.2,2.0,390.39,29.3,29.89,59.19,"2020 Trade 42"],["AAPL","2020-08-26 09:30:05","2020-09-08 09:30:05",106.5,107.31,162,17252.77,80.1,0.77,132.06,25.88,26.08,51.96,"2020 Trade 44"],["GOOG","2020-08-28 09:30:05","2020-09-22 09:30:05",81.89,82.04,373,30543.8,-33.39,0.19,58.32,45.82,45.9,91.72,"2020 Trade 47"],["GOOG","2020-09-28 09:30:05","2020-09-29 09:30:05",81.51,81.94,58,4727.59,10.5,0.52,24.72,7.09,7.13,14.22,"2020 Trade 51"],["TSLA","2020-09-22 09:30:06","2020-10-02 09:30:05",100.25,100.14,221,22154.27,-89.37,-0.1,-22.94,33.23,33.2,66.43,"2020 Trade 52"],["AMZN","2020-09-15 09:30:05","2020-10-02 09:30:06",101.16,102.65,307,31055.43,364.5,1.48,458.36,46.58,47.27,93.85,"2020 Trade 53"],["MSFT","2020-09-18 09:30:05","2020-10-12 09:30:05",109.87,111.53,131,14392.59,174.64,1.52,218.15,21.59,21.92,43.5,"2020 Trade 54"],["AAPL","2020-09-24 09:30:05","2020-11-11 09:30:05",108.32,116.62,29,3141.2,230.93,7.66,240.71,4.71,5.07,9.78,"2020 Trade 57"],["AAPL","2020-11-16 09:30:05","2020-11-24 09:30:05",118.89,117.32,127,15099.21,-244.98,-1.32,-199.98,22.65,22.35,45.0,"2020 Trade 60"],["GOOG","2020-11-23 09:30:05","2020-11-27 09:30:05",80.68,80.22,102,8229.11,-70.9,-0.56,-46.29,12.34,12.27,24.62,"2020 Trade 61"],["AMZN","2020-10-16 09:30:05","2020-12-08 09:30:05",102.91,101.81,151,15538.67,-211.47,-1.06,-165.1,23.31,23.06,46.37,"2020 Trade 63"],["AAPL","2020-12-02 09:30:05","2020-12-15 09:30:05",116.05,116.97,154,17871.87,88.2,0.79,142.03,26.81,27.02,53.83,"2020 Trade 65"],["TSLA","2020-10-28 09:30:05","2021-01-06 09:30:05",101.63,103.94,284,28861.81,568.55,2.27,656.12,43.29,44.28,87.57,"2021 Trade 69"],["AMZN","2020-12-10 09:30:05","2021-01-07 09:30:05",103.11,107.95,224,23096.88,1013.34,4.69,1084.26,34.65,36.27,70.92,"2021 Trade 70"],["MSFT","2020-12-25 09:30:05","2021-01-11 09:30:05",116.87,119.43,65,7596.57,143.43,2.19,166.47,11.39,11.64,23.04,"2021 Trade 71"],["AAPL","2020-12-30 09:30:05","2021-01-12 09:30:05",114.28,116.16,41,4685.45,63.05,1.65,77.22,7.03,7.14,14.17,"2021 Trade 72"],["GOOG","2020-12-15 09:30:06","2021-01-13 09:30:05",82.79,84.4,274,22685.17,371.33,1.94,440.05,34.03,34.69,68.72,"2021 Trade 73"],["AMZN","2021-01-18 09:30:06","2021-01-19 09:30:05",106.96,107.81,122,13049.22,63.82,0.79,103.13,19.57,19.73,39.3,"2021 Trade 77"],["TSLA","2021-01-14 09:30:05","2021-01-22 09:30:05",106.5,105.15,287,30565.62,-479.11,-1.27,-388.0,45.85,45.27,91.11,"2021 Trade 78"],["TSLA","2021-01-25 09:30:05","2021-01-29 09:30:05",106.11,105.85,175,18569.6,-101.08,-0.24,-45.44,27.85,27.79,55.64,"2021 Trade 81"],["GOOG","2021-01-18 09:30:05","2021-02-02 09:30:05",84.48,87.02,246,20781.66,562.2,3.01,625.49,31.17,32.11,63.28,"2021 Trade 82"],["TSLA","2021-02-02 09:30:06","2021-02-11 09:30:05",104.46,106.7,327,34159.93,628.03,2.14,731.61,51.24,52.34,103.58,"2021 Trade 84"],["TSLA","2021-03-01 09:30:05","2021-03-03 09:30:05",108.9,108.37,346,37678.06,-296.21,-0.49,-183.45,56.52,56.24,112.76,"2021 Trade 86"],["GOOG","2021-03-04 09:30:05","2021-03-08 09:30:05",87.74,87.61,380,33340.56,-148.27,-0.14,-48.32,50.01,49.94,99.95,"2021 Trade 88"],["TSLA","2021-03-08 09:30:06","2021-03-09 09:30:05",108.64,108.67,124,13470.8,-36.71,0.03,3.71,20.21,20.21,40.42,"2021 Trade 90"],["GOOG","2021-03-12 09:30:05","2021-03-23 09:30:05",88.34,89.32,133,11749.33,94.77,1.11,130.22,17.62,17.82,35.44,"2021 Trade 93"],["AMZN","2021-03-26 09:30:05","2021-03-29 09:30:05",118.49,119.0,94,11137.9,14.92,0.43,48.41,16.71,16.78,33.49,"2021 Trade 95"],["AAPL","2021-01-27 09:30:05","2021-03-31 09:30:05",121.41,128.54,214,25980.8,1447.39,5.88,1527.62,38.97,41.26,80.23,"2021 Trade 96"],["GOOG","2021-04-07 09:30:05","2021-04-12 09:30:05",90.01,89.69,92,8280.55,-53.78,-0.35,-28.98,12.42,12.38,24.8,"2021 Trade 99"],["AAPL","2021-04-05 09:30:05","2022-12-30 09:30:05",128.05,141.6,195,24970.03,2604.13,10.58,2641.59,37.46,0.0,37.46,"*opened"],["MSFT","2021-03-10 09:30:05","2022-12-30 09:30:09",123.89,155.74,282,34938.11,8927.66,25.7,8980.07,52.41,0.0,52.41,"*opened"]]
+            /*tab_data]*/
+            ;
+            const columns =
+                /*[tab_columns*/
+            [{"title":"ticker","orderable":true,"columnControl":["order",["title","searchList"]]},{"title":"open date","orderable":true,"searchable":true,"columnControl":["order",["title","search"]]},{"title":"close date","orderable":true,"searchable":true,"columnControl":["order",["title","search"]]},{"title":"buy price","orderable":true,"searchable":true,"columnControl":["order",["title","search"]]},{"title":"sell price","orderable":true,"searchable":true,"columnControl":["order",["title","search"]]},{"title":"quantity","orderable":true,"searchable":true,"columnControl":["order",["title","search"]]},{"title":"position size","orderable":true,"searchable":true,"columnControl":["order",["title","search"]]},{"title":"net profit","orderable":true,"searchable":true,"columnControl":["order",["title","search"]]},{"title":"profit pct","orderable":true,"searchable":true,"columnControl":["order",["title","search"]]},{"title":"gross profit","orderable":true,"searchable":true,"columnControl":["order",["title","search"]]},{"title":"buy fees","orderable":true,"searchable":true,"columnControl":["order",["title","search"]]},{"title":"sell fees","orderable":true,"searchable":true,"columnControl":["order",["title","search"]]},{"title":"total fees","orderable":true,"searchable":true,"columnControl":["order",["title","search"]]},{"title":"log msg","orderable":true,"searchable":true,"columnControl":["order",["title","search"]]}]
+            /*tab_columns]*/
+            ;
+            const search_columns =
+                /*[search_columns*/
+            ["ticker","open_date","close_date","log_msg"]
+            /*search_columns]*/
+            ;
+            const search_val = search_columns && search_columns.length > 0 ? "search" : null;
+            const custom_layout = {
+                top1Start: "info",
+                top2Start: search_val,
+                topStart: ["pageLength", {
+                    buttons: ["colvis", "copy"]
+                }],
+                topEnd: null,
+                bottomStart: null,
+                bottomEnd: null,
+                bottom: "paging"
+            };
+            const TABLE_ID = /*[table_id*/
+            "pd_datatab"
+            /*table_id]*/
+            ;
+            const locale_fmt = /*[locale_fmt*/ false /*locale_fmt]*/ ;
+            if (locale_fmt) {
+                DataTable.type("date", "render", DataTable.render.date());
+                DataTable.type("num", "render", DataTable.render.number());
+            } else {
+                DataTable.type("num", "render", DataTable.render.number(thousands, decimal, render_precision));
+            }
+            const clearButton = '<button id="custom_clear1" class="custom_btn"><span class="icon"><svg id="custom_clear2" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-funnel-x-icon lucide-funnel-x"><path d="M12.531 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14v6a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341l.427-.473"/><path d="m16.5 3.5 5 5"/><path d="m21.5 3.5-5 5"/></svg></span>Clear all</button>';
+            let table_opts = {
+                data: tab_data,
+                layout: custom_layout,
+                autoWidth: false,
+                columns: columns,
+                pageLength: 50,
+                responsive: true,
+                order: false,
+                processing: true,
+                language: {
+                    search: "_INPUT_",
+                    searchPlaceholder: "Search in columns:",
+                    sInfoFiltered: "(filtered from _MAX_ total _ENTRIES-MAX_ ) " + clearButton
+                },
+                initComplete: search_info
+            };
+            const custom_config_opts = /*[js_opts*/
+            {"paging": true, "pageLength": 30 }
+            /*js_opts]*/ ;
+            if (custom_config_opts && Object.keys(custom_config_opts).length > 0) {
+                deepMerge(table_opts, custom_config_opts);
+            }
+            const build_table = function() {
+                let table = $("#" + TABLE_ID).DataTable(table_opts);
+                $(document).on("click", e => {
+                    if (e.target.id.includes("custom_clear")) {
+                        try {
+                            table.search("").columns().columnControl.searchClear().draw();
+                        } catch (err) {
+                            console.log(err);
+                            table.search("").draw();
+                        }
+                    }
                 });
+            };
+            $(document).ready(function() {
+                build_table();
+            });
             })();
             </script> <!--trades]-->
         </div>
     </div>
-    <script src="https://cdn.plot.ly/plotly-3.1.0.min.js" charset="utf-8"></script> 
+    <script src="https://cdn.plot.ly/plotly-3.1.2.min.js" charset="utf-8"></script> 
     <script>
 
 
-        $(document).ready(function() {   
+        $(document).ready(function() {
             /*[generate_jsdata*/
             // generate_jsdata function
             /*generate_jsdata]*/
@@ -455,25 +611,25 @@
             };
 
 
-            
+
             const real_dates =
                 /*[real_dates*/
-    [1577836800000, 1577923200000, 1578009600000, 1578096000000, 1578182400000, 1578268800000, 1578355200000, 1578441600000, 1578528000000, 1578614400000, 1578700800000, 1578787200000, 1578873600000, 1578960000000, 1579046400000, 1579132800000, 1579219200000, 1579305600000, 1579392000000, 1579478400000, 1579564800000, 1579651200000, 1579737600000, 1579824000000, 1579910400000, 1579996800000, 1580083200000, 1580169600000, 1580256000000, 1580342400000, 1580428800000, 1580515200000, 1580601600000, 1580688000000, 1580774400000, 1580860800000, 1580947200000, 1581033600000, 1581120000000, 1581206400000, 1581292800000, 1581379200000, 1581465600000, 1581552000000, 1581638400000, 1581724800000, 1581811200000, 1581897600000, 1581984000000, 1582070400000, 1582156800000, 1582243200000, 1582329600000, 1582416000000, 1582502400000, 1582588800000, 1582675200000, 1582761600000, 1582848000000, 1582934400000, 1583020800000, 1583107200000, 1583193600000, 1583280000000, 1583366400000, 1583452800000, 1583539200000, 1583625600000, 1583712000000, 1583798400000, 1583884800000, 1583971200000, 1584057600000, 1584144000000, 1584230400000, 1584316800000, 1584403200000, 1584489600000, 1584576000000, 1584662400000, 1584748800000, 1584835200000, 1584921600000, 1585008000000, 1585094400000, 1585180800000, 1585267200000, 1585353600000, 1585440000000, 1585526400000, 1585612800000, 1585699200000, 1585785600000, 1585872000000, 1585958400000, 1586044800000, 1586131200000, 1586217600000, 1586304000000, 1586390400000, 1586476800000, 1586563200000, 1586649600000, 1586736000000, 1586822400000, 1586908800000, 1586995200000, 1587081600000, 1587168000000, 1587254400000, 1587340800000, 1587427200000, 1587513600000, 1587600000000, 1587686400000, 1587772800000, 1587859200000, 1587945600000, 1588032000000, 1588118400000, 1588204800000, 1588291200000, 1588377600000, 1588464000000, 1588550400000, 1588636800000, 1588723200000, 1588809600000, 1588896000000, 1588982400000, 1589068800000, 1589155200000, 1589241600000, 1589328000000, 1589414400000, 1589500800000, 1589587200000, 1589673600000, 1589760000000, 1589846400000, 1589932800000, 1590019200000, 1590105600000, 1590192000000, 1590278400000, 1590364800000, 1590451200000, 1590537600000, 1590624000000, 1590710400000, 1590796800000, 1590883200000, 1590969600000, 1591056000000, 1591142400000, 1591228800000, 1591315200000, 1591401600000, 1591488000000, 1591574400000, 1591660800000, 1591747200000, 1591833600000, 1591920000000, 1592006400000, 1592092800000, 1592179200000, 1592265600000, 1592352000000, 1592438400000, 1592524800000, 1592611200000, 1592697600000, 1592784000000, 1592870400000, 1592956800000, 1593043200000, 1593129600000, 1593216000000, 1593302400000, 1593388800000, 1593475200000, 1593561600000, 1593648000000, 1593734400000, 1593820800000, 1593907200000, 1593993600000, 1594080000000, 1594166400000, 1594252800000, 1594339200000, 1594425600000, 1594512000000, 1594598400000, 1594684800000, 1594771200000, 1594857600000, 1594944000000, 1595030400000, 1595116800000, 1595203200000, 1595289600000, 1595376000000, 1595462400000, 1595548800000, 1595635200000, 1595721600000, 1595808000000, 1595894400000, 1595980800000, 1596067200000, 1596153600000, 1596240000000, 1596326400000, 1596412800000, 1596499200000, 1596585600000, 1596672000000, 1596758400000, 1596844800000, 1596931200000, 1597017600000, 1597104000000, 1597190400000, 1597276800000, 1597363200000, 1597449600000, 1597536000000, 1597622400000, 1597708800000, 1597795200000, 1597881600000, 1597968000000, 1598054400000, 1598140800000, 1598227200000, 1598313600000, 1598400000000, 1598486400000, 1598572800000, 1598659200000, 1598745600000, 1598832000000, 1598918400000, 1599004800000, 1599091200000, 1599177600000, 1599264000000, 1599350400000, 1599436800000, 1599523200000, 1599609600000, 1599696000000, 1599782400000, 1599868800000, 1599955200000, 1600041600000, 1600128000000, 1600214400000, 1600300800000, 1600387200000, 1600473600000, 1600560000000, 1600646400000, 1600732800000, 1600819200000, 1600905600000, 1600992000000, 1601078400000, 1601164800000, 1601251200000, 1601337600000, 1601424000000, 1601510400000, 1601596800000, 1601683200000, 1601769600000, 1601856000000, 1601942400000, 1602028800000, 1602115200000, 1602201600000, 1602288000000, 1602374400000, 1602460800000, 1602547200000, 1602633600000, 1602720000000, 1602806400000, 1602892800000, 1602979200000, 1603065600000, 1603152000000, 1603238400000, 1603324800000, 1603411200000, 1603497600000, 1603584000000, 1603670400000, 1603756800000, 1603843200000, 1603929600000, 1604016000000, 1604102400000, 1604188800000, 1604275200000, 1604361600000, 1604448000000, 1604534400000, 1604620800000, 1604707200000, 1604793600000, 1604880000000, 1604966400000, 1605052800000, 1605139200000, 1605225600000, 1605312000000, 1605398400000, 1605484800000, 1605571200000, 1605657600000, 1605744000000, 1605830400000, 1605916800000, 1606003200000, 1606089600000, 1606176000000, 1606262400000, 1606348800000, 1606435200000, 1606521600000, 1606608000000, 1606694400000, 1606780800000, 1606867200000, 1606953600000, 1607040000000, 1607126400000, 1607212800000, 1607299200000, 1607385600000, 1607472000000, 1607558400000, 1607644800000, 1607731200000, 1607817600000, 1607904000000, 1607990400000, 1608076800000, 1608163200000, 1608249600000, 1608336000000, 1608422400000, 1608508800000, 1608595200000, 1608681600000, 1608768000000, 1608854400000, 1608940800000, 1609027200000, 1609113600000, 1609200000000, 1609286400000, 1609372800000, 1609459200000, 1609545600000, 1609632000000, 1609718400000, 1609804800000, 1609891200000, 1609977600000, 1610064000000, 1610150400000, 1610236800000, 1610323200000, 1610409600000, 1610496000000, 1610582400000, 1610668800000, 1610755200000, 1610841600000, 1610928000000, 1611014400000, 1611100800000, 1611187200000, 1611273600000, 1611360000000, 1611446400000, 1611532800000, 1611619200000, 1611705600000, 1611792000000, 1611878400000, 1611964800000, 1612051200000, 1612137600000, 1612224000000, 1612310400000, 1612396800000, 1612483200000, 1612569600000, 1612656000000, 1612742400000, 1612828800000, 1612915200000, 1613001600000, 1613088000000, 1613174400000, 1613260800000, 1613347200000, 1613433600000, 1613520000000, 1613606400000, 1613692800000, 1613779200000, 1613865600000, 1613952000000, 1614038400000, 1614124800000, 1614211200000, 1614297600000, 1614384000000, 1614470400000, 1614556800000, 1614643200000, 1614729600000, 1614816000000, 1614902400000, 1614988800000, 1615075200000, 1615161600000, 1615248000000, 1615334400000, 1615420800000, 1615507200000, 1615593600000, 1615680000000, 1615766400000, 1615852800000, 1615939200000, 1616025600000, 1616112000000, 1616198400000, 1616284800000, 1616371200000, 1616457600000, 1616544000000, 1616630400000, 1616716800000, 1616803200000, 1616889600000, 1616976000000, 1617062400000, 1617148800000, 1617235200000, 1617321600000, 1617408000000, 1617494400000, 1617580800000, 1617667200000, 1617753600000, 1617840000000, 1617926400000, 1618012800000, 1618099200000, 1618185600000, 1618272000000, 1618358400000, 1618444800000, 1618531200000, 1618617600000, 1618704000000, 1618790400000, 1618876800000, 1618963200000, 1619049600000, 1619136000000, 1619222400000, 1619308800000, 1619395200000, 1619481600000, 1619568000000, 1619654400000, 1619740800000, 1619827200000, 1619913600000, 1620000000000, 1620086400000, 1620172800000, 1620259200000, 1620345600000, 1620432000000, 1620518400000, 1620604800000, 1620691200000, 1620777600000, 1620864000000, 1620950400000, 1621036800000, 1621123200000, 1621209600000, 1621296000000, 1621382400000, 1621468800000, 1621555200000, 1621641600000, 1621728000000, 1621814400000, 1621900800000, 1621987200000, 1622073600000, 1622160000000, 1622246400000, 1622332800000, 1622419200000, 1622505600000, 1622592000000, 1622678400000, 1622764800000, 1622851200000, 1622937600000, 1623024000000, 1623110400000, 1623196800000, 1623283200000, 1623369600000, 1623456000000, 1623542400000, 1623628800000, 1623715200000, 1623801600000, 1623888000000, 1623974400000, 1624060800000, 1624147200000, 1624233600000, 1624320000000, 1624406400000, 1624492800000, 1624579200000, 1624665600000, 1624752000000, 1624838400000, 1624924800000, 1625011200000, 1625097600000, 1625184000000, 1625270400000, 1625356800000, 1625443200000, 1625529600000, 1625616000000, 1625702400000, 1625788800000, 1625875200000, 1625961600000, 1626048000000, 1626134400000, 1626220800000, 1626307200000, 1626393600000, 1626480000000, 1626566400000, 1626652800000, 1626739200000, 1626825600000, 1626912000000, 1626998400000, 1627084800000, 1627171200000, 1627257600000, 1627344000000, 1627430400000, 1627516800000, 1627603200000, 1627689600000, 1627776000000, 1627862400000, 1627948800000, 1628035200000, 1628121600000, 1628208000000, 1628294400000, 1628380800000, 1628467200000, 1628553600000, 1628640000000, 1628726400000, 1628812800000, 1628899200000, 1628985600000, 1629072000000, 1629158400000, 1629244800000, 1629331200000, 1629417600000, 1629504000000, 1629590400000, 1629676800000, 1629763200000, 1629849600000, 1629936000000, 1630022400000, 1630108800000, 1630195200000, 1630281600000, 1630368000000, 1630454400000, 1630540800000, 1630627200000, 1630713600000, 1630800000000, 1630886400000, 1630972800000, 1631059200000, 1631145600000, 1631232000000, 1631318400000, 1631404800000, 1631491200000, 1631577600000, 1631664000000, 1631750400000, 1631836800000, 1631923200000, 1632009600000, 1632096000000, 1632182400000, 1632268800000, 1632355200000, 1632441600000, 1632528000000, 1632614400000, 1632700800000, 1632787200000, 1632873600000, 1632960000000, 1633046400000, 1633132800000, 1633219200000, 1633305600000, 1633392000000, 1633478400000, 1633564800000, 1633651200000, 1633737600000, 1633824000000, 1633910400000, 1633996800000, 1634083200000, 1634169600000, 1634256000000, 1634342400000, 1634428800000, 1634515200000, 1634601600000, 1634688000000, 1634774400000, 1634860800000, 1634947200000, 1635033600000, 1635120000000, 1635206400000, 1635292800000, 1635379200000, 1635465600000, 1635552000000, 1635638400000, 1635724800000, 1635811200000, 1635897600000, 1635984000000, 1636070400000, 1636156800000, 1636243200000, 1636329600000, 1636416000000, 1636502400000, 1636588800000, 1636675200000, 1636761600000, 1636848000000, 1636934400000, 1637020800000, 1637107200000, 1637193600000, 1637280000000, 1637366400000, 1637452800000, 1637539200000, 1637625600000, 1637712000000, 1637798400000, 1637884800000, 1637971200000, 1638057600000, 1638144000000, 1638230400000, 1638316800000, 1638403200000, 1638489600000, 1638576000000, 1638662400000, 1638748800000, 1638835200000, 1638921600000, 1639008000000, 1639094400000, 1639180800000, 1639267200000, 1639353600000, 1639440000000, 1639526400000, 1639612800000, 1639699200000, 1639785600000, 1639872000000, 1639958400000, 1640044800000, 1640131200000, 1640217600000, 1640304000000, 1640390400000, 1640476800000, 1640563200000, 1640649600000, 1640736000000, 1640822400000, 1640908800000, 1640995200000, 1641081600000, 1641168000000, 1641254400000, 1641340800000, 1641427200000, 1641513600000, 1641600000000, 1641686400000, 1641772800000, 1641859200000, 1641945600000, 1642032000000, 1642118400000, 1642204800000, 1642291200000, 1642377600000, 1642464000000, 1642550400000, 1642636800000, 1642723200000, 1642809600000, 1642896000000, 1642982400000, 1643068800000, 1643155200000, 1643241600000, 1643328000000, 1643414400000, 1643500800000, 1643587200000, 1643673600000, 1643760000000, 1643846400000, 1643932800000, 1644019200000, 1644105600000, 1644192000000, 1644278400000, 1644364800000, 1644451200000, 1644537600000, 1644624000000, 1644710400000, 1644796800000, 1644883200000, 1644969600000, 1645056000000, 1645142400000, 1645228800000, 1645315200000, 1645401600000, 1645488000000, 1645574400000, 1645660800000, 1645747200000, 1645833600000, 1645920000000, 1646006400000, 1646092800000, 1646179200000, 1646265600000, 1646352000000, 1646438400000, 1646524800000, 1646611200000, 1646697600000, 1646784000000, 1646870400000, 1646956800000, 1647043200000, 1647129600000, 1647216000000, 1647302400000, 1647388800000, 1647475200000, 1647561600000, 1647648000000, 1647734400000, 1647820800000, 1647907200000, 1647993600000, 1648080000000, 1648166400000, 1648252800000, 1648339200000, 1648425600000, 1648512000000, 1648598400000, 1648684800000, 1648771200000, 1648857600000, 1648944000000, 1649030400000, 1649116800000, 1649203200000, 1649289600000, 1649376000000, 1649462400000, 1649548800000, 1649635200000, 1649721600000, 1649808000000, 1649894400000, 1649980800000, 1650067200000, 1650153600000, 1650240000000, 1650326400000, 1650412800000, 1650499200000, 1650585600000, 1650672000000, 1650758400000, 1650844800000, 1650931200000, 1651017600000, 1651104000000, 1651190400000, 1651276800000, 1651363200000, 1651449600000, 1651536000000, 1651622400000, 1651708800000, 1651795200000, 1651881600000, 1651968000000, 1652054400000, 1652140800000, 1652227200000, 1652313600000, 1652400000000, 1652486400000, 1652572800000, 1652659200000, 1652745600000, 1652832000000, 1652918400000, 1653004800000, 1653091200000, 1653177600000, 1653264000000, 1653350400000, 1653436800000, 1653523200000, 1653609600000, 1653696000000, 1653782400000, 1653868800000, 1653955200000, 1654041600000, 1654128000000, 1654214400000, 1654300800000, 1654387200000, 1654473600000, 1654560000000, 1654646400000, 1654732800000, 1654819200000, 1654905600000, 1654992000000, 1655078400000, 1655164800000, 1655251200000, 1655337600000, 1655424000000, 1655510400000, 1655596800000, 1655683200000, 1655769600000, 1655856000000, 1655942400000, 1656028800000, 1656115200000, 1656201600000, 1656288000000, 1656374400000, 1656460800000, 1656547200000, 1656633600000, 1656720000000, 1656806400000, 1656892800000, 1656979200000, 1657065600000, 1657152000000, 1657238400000, 1657324800000, 1657411200000, 1657497600000, 1657584000000, 1657670400000, 1657756800000, 1657843200000, 1657929600000, 1658016000000, 1658102400000, 1658188800000, 1658275200000, 1658361600000, 1658448000000, 1658534400000, 1658620800000, 1658707200000, 1658793600000, 1658880000000, 1658966400000, 1659052800000, 1659139200000, 1659225600000, 1659312000000, 1659398400000, 1659484800000, 1659571200000, 1659657600000, 1659744000000, 1659830400000, 1659916800000, 1660003200000, 1660089600000, 1660176000000, 1660262400000, 1660348800000, 1660435200000, 1660521600000, 1660608000000, 1660694400000, 1660780800000, 1660867200000, 1660953600000, 1661040000000, 1661126400000, 1661212800000, 1661299200000, 1661385600000, 1661472000000, 1661558400000, 1661644800000, 1661731200000, 1661817600000, 1661904000000, 1661990400000, 1662076800000, 1662163200000, 1662249600000, 1662336000000, 1662422400000, 1662508800000, 1662595200000, 1662681600000, 1662768000000, 1662854400000, 1662940800000, 1663027200000, 1663113600000, 1663200000000, 1663286400000, 1663372800000, 1663459200000, 1663545600000, 1663632000000, 1663718400000, 1663804800000, 1663891200000, 1663977600000, 1664064000000, 1664150400000, 1664236800000, 1664323200000, 1664409600000, 1664496000000, 1664582400000, 1664668800000, 1664755200000, 1664841600000, 1664928000000, 1665014400000, 1665100800000, 1665187200000, 1665273600000, 1665360000000, 1665446400000, 1665532800000, 1665619200000, 1665705600000, 1665792000000, 1665878400000, 1665964800000, 1666051200000, 1666137600000, 1666224000000, 1666310400000, 1666396800000, 1666483200000, 1666569600000, 1666656000000, 1666742400000, 1666828800000, 1666915200000, 1667001600000, 1667088000000, 1667174400000, 1667260800000, 1667347200000, 1667433600000, 1667520000000, 1667606400000, 1667692800000, 1667779200000, 1667865600000, 1667952000000, 1668038400000, 1668124800000, 1668211200000, 1668297600000, 1668384000000, 1668470400000, 1668556800000, 1668643200000, 1668729600000, 1668816000000, 1668902400000, 1668988800000, 1669075200000, 1669161600000, 1669248000000, 1669334400000, 1669420800000, 1669507200000, 1669593600000, 1669680000000, 1669766400000, 1669852800000, 1669939200000, 1670025600000, 1670112000000, 1670198400000, 1670284800000, 1670371200000, 1670457600000, 1670544000000, 1670630400000, 1670716800000, 1670803200000, 1670889600000, 1670976000000, 1671062400000, 1671148800000, 1671235200000, 1671321600000, 1671408000000, 1671494400000, 1671580800000, 1671667200000, 1671753600000, 1671840000000, 1671926400000, 1672012800000, 1672099200000, 1672185600000, 1672272000000, 1672358400000]
-    /*real_dates]*/
+                [1577836800000, 1577923200000, 1578009600000, 1578096000000, 1578182400000, 1578268800000, 1578355200000, 1578441600000, 1578528000000, 1578614400000, 1578700800000, 1578787200000, 1578873600000, 1578960000000, 1579046400000, 1579132800000, 1579219200000, 1579305600000, 1579392000000, 1579478400000, 1579564800000, 1579651200000, 1579737600000, 1579824000000, 1579910400000, 1579996800000, 1580083200000, 1580169600000, 1580256000000, 1580342400000, 1580428800000, 1580515200000, 1580601600000, 1580688000000, 1580774400000, 1580860800000, 1580947200000, 1581033600000, 1581120000000, 1581206400000, 1581292800000, 1581379200000, 1581465600000, 1581552000000, 1581638400000, 1581724800000, 1581811200000, 1581897600000, 1581984000000, 1582070400000, 1582156800000, 1582243200000, 1582329600000, 1582416000000, 1582502400000, 1582588800000, 1582675200000, 1582761600000, 1582848000000, 1582934400000, 1583020800000, 1583107200000, 1583193600000, 1583280000000, 1583366400000, 1583452800000, 1583539200000, 1583625600000, 1583712000000, 1583798400000, 1583884800000, 1583971200000, 1584057600000, 1584144000000, 1584230400000, 1584316800000, 1584403200000, 1584489600000, 1584576000000, 1584662400000, 1584748800000, 1584835200000, 1584921600000, 1585008000000, 1585094400000, 1585180800000, 1585267200000, 1585353600000, 1585440000000, 1585526400000, 1585612800000, 1585699200000, 1585785600000, 1585872000000, 1585958400000, 1586044800000, 1586131200000, 1586217600000, 1586304000000, 1586390400000, 1586476800000, 1586563200000, 1586649600000, 1586736000000, 1586822400000, 1586908800000, 1586995200000, 1587081600000, 1587168000000, 1587254400000, 1587340800000, 1587427200000, 1587513600000, 1587600000000, 1587686400000, 1587772800000, 1587859200000, 1587945600000, 1588032000000, 1588118400000, 1588204800000, 1588291200000, 1588377600000, 1588464000000, 1588550400000, 1588636800000, 1588723200000, 1588809600000, 1588896000000, 1588982400000, 1589068800000, 1589155200000, 1589241600000, 1589328000000, 1589414400000, 1589500800000, 1589587200000, 1589673600000, 1589760000000, 1589846400000, 1589932800000, 1590019200000, 1590105600000, 1590192000000, 1590278400000, 1590364800000, 1590451200000, 1590537600000, 1590624000000, 1590710400000, 1590796800000, 1590883200000, 1590969600000, 1591056000000, 1591142400000, 1591228800000, 1591315200000, 1591401600000, 1591488000000, 1591574400000, 1591660800000, 1591747200000, 1591833600000, 1591920000000, 1592006400000, 1592092800000, 1592179200000, 1592265600000, 1592352000000, 1592438400000, 1592524800000, 1592611200000, 1592697600000, 1592784000000, 1592870400000, 1592956800000, 1593043200000, 1593129600000, 1593216000000, 1593302400000, 1593388800000, 1593475200000, 1593561600000, 1593648000000, 1593734400000, 1593820800000, 1593907200000, 1593993600000, 1594080000000, 1594166400000, 1594252800000, 1594339200000, 1594425600000, 1594512000000, 1594598400000, 1594684800000, 1594771200000, 1594857600000, 1594944000000, 1595030400000, 1595116800000, 1595203200000, 1595289600000, 1595376000000, 1595462400000, 1595548800000, 1595635200000, 1595721600000, 1595808000000, 1595894400000, 1595980800000, 1596067200000, 1596153600000, 1596240000000, 1596326400000, 1596412800000, 1596499200000, 1596585600000, 1596672000000, 1596758400000, 1596844800000, 1596931200000, 1597017600000, 1597104000000, 1597190400000, 1597276800000, 1597363200000, 1597449600000, 1597536000000, 1597622400000, 1597708800000, 1597795200000, 1597881600000, 1597968000000, 1598054400000, 1598140800000, 1598227200000, 1598313600000, 1598400000000, 1598486400000, 1598572800000, 1598659200000, 1598745600000, 1598832000000, 1598918400000, 1599004800000, 1599091200000, 1599177600000, 1599264000000, 1599350400000, 1599436800000, 1599523200000, 1599609600000, 1599696000000, 1599782400000, 1599868800000, 1599955200000, 1600041600000, 1600128000000, 1600214400000, 1600300800000, 1600387200000, 1600473600000, 1600560000000, 1600646400000, 1600732800000, 1600819200000, 1600905600000, 1600992000000, 1601078400000, 1601164800000, 1601251200000, 1601337600000, 1601424000000, 1601510400000, 1601596800000, 1601683200000, 1601769600000, 1601856000000, 1601942400000, 1602028800000, 1602115200000, 1602201600000, 1602288000000, 1602374400000, 1602460800000, 1602547200000, 1602633600000, 1602720000000, 1602806400000, 1602892800000, 1602979200000, 1603065600000, 1603152000000, 1603238400000, 1603324800000, 1603411200000, 1603497600000, 1603584000000, 1603670400000, 1603756800000, 1603843200000, 1603929600000, 1604016000000, 1604102400000, 1604188800000, 1604275200000, 1604361600000, 1604448000000, 1604534400000, 1604620800000, 1604707200000, 1604793600000, 1604880000000, 1604966400000, 1605052800000, 1605139200000, 1605225600000, 1605312000000, 1605398400000, 1605484800000, 1605571200000, 1605657600000, 1605744000000, 1605830400000, 1605916800000, 1606003200000, 1606089600000, 1606176000000, 1606262400000, 1606348800000, 1606435200000, 1606521600000, 1606608000000, 1606694400000, 1606780800000, 1606867200000, 1606953600000, 1607040000000, 1607126400000, 1607212800000, 1607299200000, 1607385600000, 1607472000000, 1607558400000, 1607644800000, 1607731200000, 1607817600000, 1607904000000, 1607990400000, 1608076800000, 1608163200000, 1608249600000, 1608336000000, 1608422400000, 1608508800000, 1608595200000, 1608681600000, 1608768000000, 1608854400000, 1608940800000, 1609027200000, 1609113600000, 1609200000000, 1609286400000, 1609372800000, 1609459200000, 1609545600000, 1609632000000, 1609718400000, 1609804800000, 1609891200000, 1609977600000, 1610064000000, 1610150400000, 1610236800000, 1610323200000, 1610409600000, 1610496000000, 1610582400000, 1610668800000, 1610755200000, 1610841600000, 1610928000000, 1611014400000, 1611100800000, 1611187200000, 1611273600000, 1611360000000, 1611446400000, 1611532800000, 1611619200000, 1611705600000, 1611792000000, 1611878400000, 1611964800000, 1612051200000, 1612137600000, 1612224000000, 1612310400000, 1612396800000, 1612483200000, 1612569600000, 1612656000000, 1612742400000, 1612828800000, 1612915200000, 1613001600000, 1613088000000, 1613174400000, 1613260800000, 1613347200000, 1613433600000, 1613520000000, 1613606400000, 1613692800000, 1613779200000, 1613865600000, 1613952000000, 1614038400000, 1614124800000, 1614211200000, 1614297600000, 1614384000000, 1614470400000, 1614556800000, 1614643200000, 1614729600000, 1614816000000, 1614902400000, 1614988800000, 1615075200000, 1615161600000, 1615248000000, 1615334400000, 1615420800000, 1615507200000, 1615593600000, 1615680000000, 1615766400000, 1615852800000, 1615939200000, 1616025600000, 1616112000000, 1616198400000, 1616284800000, 1616371200000, 1616457600000, 1616544000000, 1616630400000, 1616716800000, 1616803200000, 1616889600000, 1616976000000, 1617062400000, 1617148800000, 1617235200000, 1617321600000, 1617408000000, 1617494400000, 1617580800000, 1617667200000, 1617753600000, 1617840000000, 1617926400000, 1618012800000, 1618099200000, 1618185600000, 1618272000000, 1618358400000, 1618444800000, 1618531200000, 1618617600000, 1618704000000, 1618790400000, 1618876800000, 1618963200000, 1619049600000, 1619136000000, 1619222400000, 1619308800000, 1619395200000, 1619481600000, 1619568000000, 1619654400000, 1619740800000, 1619827200000, 1619913600000, 1620000000000, 1620086400000, 1620172800000, 1620259200000, 1620345600000, 1620432000000, 1620518400000, 1620604800000, 1620691200000, 1620777600000, 1620864000000, 1620950400000, 1621036800000, 1621123200000, 1621209600000, 1621296000000, 1621382400000, 1621468800000, 1621555200000, 1621641600000, 1621728000000, 1621814400000, 1621900800000, 1621987200000, 1622073600000, 1622160000000, 1622246400000, 1622332800000, 1622419200000, 1622505600000, 1622592000000, 1622678400000, 1622764800000, 1622851200000, 1622937600000, 1623024000000, 1623110400000, 1623196800000, 1623283200000, 1623369600000, 1623456000000, 1623542400000, 1623628800000, 1623715200000, 1623801600000, 1623888000000, 1623974400000, 1624060800000, 1624147200000, 1624233600000, 1624320000000, 1624406400000, 1624492800000, 1624579200000, 1624665600000, 1624752000000, 1624838400000, 1624924800000, 1625011200000, 1625097600000, 1625184000000, 1625270400000, 1625356800000, 1625443200000, 1625529600000, 1625616000000, 1625702400000, 1625788800000, 1625875200000, 1625961600000, 1626048000000, 1626134400000, 1626220800000, 1626307200000, 1626393600000, 1626480000000, 1626566400000, 1626652800000, 1626739200000, 1626825600000, 1626912000000, 1626998400000, 1627084800000, 1627171200000, 1627257600000, 1627344000000, 1627430400000, 1627516800000, 1627603200000, 1627689600000, 1627776000000, 1627862400000, 1627948800000, 1628035200000, 1628121600000, 1628208000000, 1628294400000, 1628380800000, 1628467200000, 1628553600000, 1628640000000, 1628726400000, 1628812800000, 1628899200000, 1628985600000, 1629072000000, 1629158400000, 1629244800000, 1629331200000, 1629417600000, 1629504000000, 1629590400000, 1629676800000, 1629763200000, 1629849600000, 1629936000000, 1630022400000, 1630108800000, 1630195200000, 1630281600000, 1630368000000, 1630454400000, 1630540800000, 1630627200000, 1630713600000, 1630800000000, 1630886400000, 1630972800000, 1631059200000, 1631145600000, 1631232000000, 1631318400000, 1631404800000, 1631491200000, 1631577600000, 1631664000000, 1631750400000, 1631836800000, 1631923200000, 1632009600000, 1632096000000, 1632182400000, 1632268800000, 1632355200000, 1632441600000, 1632528000000, 1632614400000, 1632700800000, 1632787200000, 1632873600000, 1632960000000, 1633046400000, 1633132800000, 1633219200000, 1633305600000, 1633392000000, 1633478400000, 1633564800000, 1633651200000, 1633737600000, 1633824000000, 1633910400000, 1633996800000, 1634083200000, 1634169600000, 1634256000000, 1634342400000, 1634428800000, 1634515200000, 1634601600000, 1634688000000, 1634774400000, 1634860800000, 1634947200000, 1635033600000, 1635120000000, 1635206400000, 1635292800000, 1635379200000, 1635465600000, 1635552000000, 1635638400000, 1635724800000, 1635811200000, 1635897600000, 1635984000000, 1636070400000, 1636156800000, 1636243200000, 1636329600000, 1636416000000, 1636502400000, 1636588800000, 1636675200000, 1636761600000, 1636848000000, 1636934400000, 1637020800000, 1637107200000, 1637193600000, 1637280000000, 1637366400000, 1637452800000, 1637539200000, 1637625600000, 1637712000000, 1637798400000, 1637884800000, 1637971200000, 1638057600000, 1638144000000, 1638230400000, 1638316800000, 1638403200000, 1638489600000, 1638576000000, 1638662400000, 1638748800000, 1638835200000, 1638921600000, 1639008000000, 1639094400000, 1639180800000, 1639267200000, 1639353600000, 1639440000000, 1639526400000, 1639612800000, 1639699200000, 1639785600000, 1639872000000, 1639958400000, 1640044800000, 1640131200000, 1640217600000, 1640304000000, 1640390400000, 1640476800000, 1640563200000, 1640649600000, 1640736000000, 1640822400000, 1640908800000, 1640995200000, 1641081600000, 1641168000000, 1641254400000, 1641340800000, 1641427200000, 1641513600000, 1641600000000, 1641686400000, 1641772800000, 1641859200000, 1641945600000, 1642032000000, 1642118400000, 1642204800000, 1642291200000, 1642377600000, 1642464000000, 1642550400000, 1642636800000, 1642723200000, 1642809600000, 1642896000000, 1642982400000, 1643068800000, 1643155200000, 1643241600000, 1643328000000, 1643414400000, 1643500800000, 1643587200000, 1643673600000, 1643760000000, 1643846400000, 1643932800000, 1644019200000, 1644105600000, 1644192000000, 1644278400000, 1644364800000, 1644451200000, 1644537600000, 1644624000000, 1644710400000, 1644796800000, 1644883200000, 1644969600000, 1645056000000, 1645142400000, 1645228800000, 1645315200000, 1645401600000, 1645488000000, 1645574400000, 1645660800000, 1645747200000, 1645833600000, 1645920000000, 1646006400000, 1646092800000, 1646179200000, 1646265600000, 1646352000000, 1646438400000, 1646524800000, 1646611200000, 1646697600000, 1646784000000, 1646870400000, 1646956800000, 1647043200000, 1647129600000, 1647216000000, 1647302400000, 1647388800000, 1647475200000, 1647561600000, 1647648000000, 1647734400000, 1647820800000, 1647907200000, 1647993600000, 1648080000000, 1648166400000, 1648252800000, 1648339200000, 1648425600000, 1648512000000, 1648598400000, 1648684800000, 1648771200000, 1648857600000, 1648944000000, 1649030400000, 1649116800000, 1649203200000, 1649289600000, 1649376000000, 1649462400000, 1649548800000, 1649635200000, 1649721600000, 1649808000000, 1649894400000, 1649980800000, 1650067200000, 1650153600000, 1650240000000, 1650326400000, 1650412800000, 1650499200000, 1650585600000, 1650672000000, 1650758400000, 1650844800000, 1650931200000, 1651017600000, 1651104000000, 1651190400000, 1651276800000, 1651363200000, 1651449600000, 1651536000000, 1651622400000, 1651708800000, 1651795200000, 1651881600000, 1651968000000, 1652054400000, 1652140800000, 1652227200000, 1652313600000, 1652400000000, 1652486400000, 1652572800000, 1652659200000, 1652745600000, 1652832000000, 1652918400000, 1653004800000, 1653091200000, 1653177600000, 1653264000000, 1653350400000, 1653436800000, 1653523200000, 1653609600000, 1653696000000, 1653782400000, 1653868800000, 1653955200000, 1654041600000, 1654128000000, 1654214400000, 1654300800000, 1654387200000, 1654473600000, 1654560000000, 1654646400000, 1654732800000, 1654819200000, 1654905600000, 1654992000000, 1655078400000, 1655164800000, 1655251200000, 1655337600000, 1655424000000, 1655510400000, 1655596800000, 1655683200000, 1655769600000, 1655856000000, 1655942400000, 1656028800000, 1656115200000, 1656201600000, 1656288000000, 1656374400000, 1656460800000, 1656547200000, 1656633600000, 1656720000000, 1656806400000, 1656892800000, 1656979200000, 1657065600000, 1657152000000, 1657238400000, 1657324800000, 1657411200000, 1657497600000, 1657584000000, 1657670400000, 1657756800000, 1657843200000, 1657929600000, 1658016000000, 1658102400000, 1658188800000, 1658275200000, 1658361600000, 1658448000000, 1658534400000, 1658620800000, 1658707200000, 1658793600000, 1658880000000, 1658966400000, 1659052800000, 1659139200000, 1659225600000, 1659312000000, 1659398400000, 1659484800000, 1659571200000, 1659657600000, 1659744000000, 1659830400000, 1659916800000, 1660003200000, 1660089600000, 1660176000000, 1660262400000, 1660348800000, 1660435200000, 1660521600000, 1660608000000, 1660694400000, 1660780800000, 1660867200000, 1660953600000, 1661040000000, 1661126400000, 1661212800000, 1661299200000, 1661385600000, 1661472000000, 1661558400000, 1661644800000, 1661731200000, 1661817600000, 1661904000000, 1661990400000, 1662076800000, 1662163200000, 1662249600000, 1662336000000, 1662422400000, 1662508800000, 1662595200000, 1662681600000, 1662768000000, 1662854400000, 1662940800000, 1663027200000, 1663113600000, 1663200000000, 1663286400000, 1663372800000, 1663459200000, 1663545600000, 1663632000000, 1663718400000, 1663804800000, 1663891200000, 1663977600000, 1664064000000, 1664150400000, 1664236800000, 1664323200000, 1664409600000, 1664496000000, 1664582400000, 1664668800000, 1664755200000, 1664841600000, 1664928000000, 1665014400000, 1665100800000, 1665187200000, 1665273600000, 1665360000000, 1665446400000, 1665532800000, 1665619200000, 1665705600000, 1665792000000, 1665878400000, 1665964800000, 1666051200000, 1666137600000, 1666224000000, 1666310400000, 1666396800000, 1666483200000, 1666569600000, 1666656000000, 1666742400000, 1666828800000, 1666915200000, 1667001600000, 1667088000000, 1667174400000, 1667260800000, 1667347200000, 1667433600000, 1667520000000, 1667606400000, 1667692800000, 1667779200000, 1667865600000, 1667952000000, 1668038400000, 1668124800000, 1668211200000, 1668297600000, 1668384000000, 1668470400000, 1668556800000, 1668643200000, 1668729600000, 1668816000000, 1668902400000, 1668988800000, 1669075200000, 1669161600000, 1669248000000, 1669334400000, 1669420800000, 1669507200000, 1669593600000, 1669680000000, 1669766400000, 1669852800000, 1669939200000, 1670025600000, 1670112000000, 1670198400000, 1670284800000, 1670371200000, 1670457600000, 1670544000000, 1670630400000, 1670716800000, 1670803200000, 1670889600000, 1670976000000, 1671062400000, 1671148800000, 1671235200000, 1671321600000, 1671408000000, 1671494400000, 1671580800000, 1671667200000, 1671753600000, 1671840000000, 1671926400000, 1672012800000, 1672099200000, 1672185600000, 1672272000000, 1672358400000]
+            /*real_dates]*/
             const real_values =
                 /*[real_values*/
-    [99850.6997185983, 99742.0231676432, 100055.53407658641, 100055.53407658641, 100055.53407658641, 99857.77178341977, 100033.6096790379, 100271.97306745776, 100231.97985971576, 100448.17192998332, 100448.17192998332, 100448.17192998332, 100488.93102552947, 100519.28087604177, 100754.09971922069, 100846.73340216064, 100795.43478506399, 100795.43478506399, 100795.43478506399, 100942.05756947529, 101032.10914517689, 101055.50914346351, 100971.85614446245, 100806.48618622267, 100806.48618622267, 100806.48618622267, 100882.74174674493, 100938.41130333692, 101090.26978862478, 101198.17976952839, 101202.49549584964, 101202.49549584964, 101202.49549584964, 101424.61011260042, 101402.89365052729, 101147.61331784698, 101130.78734190896, 101098.65488174724, 101098.65488174724, 101098.65488174724, 101088.53861667425, 101340.56594993237, 101323.2588641308, 101284.14253288243, 101079.43460320731, 101079.43460320731, 101079.43460320731, 100890.90494374378, 100863.44327740779, 100952.75087763372, 100996.04924783934, 100987.03660395772, 100987.03660395772, 100987.03660395772, 100886.55047646313, 100639.01526365902, 100565.64247705512, 100255.33603587671, 100359.17189993792, 100359.17189993792, 100359.17189993792, 100564.32513799187, 100563.83800707848, 100588.691201987, 100481.39045726779, 100226.7344545864, 100226.7344545864, 100226.7344545864, 100518.62517582, 100742.10812380328, 100511.60698568591, 100515.78755027053, 100758.50167375685, 100758.50167375685, 100758.50167375685, 100588.52298812005, 100560.12714955688, 100582.68737944268, 100744.05282920974, 100912.3462182843, 100912.3462182843, 100912.3462182843, 101004.19153378149, 101082.21349581932, 101023.85103175888, 101028.91250110252, 101308.48238709779, 101308.48238709779, 101308.48238709779, 101188.54453146932, 101458.5099481293, 101575.45816092094, 101514.66049519103, 101407.96960943479, 101407.96960943479, 101407.96960943479, 101412.14697811806, 101417.8853016411, 101340.48498381338, 101121.02076352401, 101098.79592382876, 101098.79592382876, 101098.79592382876, 101258.64000224309, 101314.08225343579, 101187.07728700957, 101269.21788243575, 101196.10071800067, 101196.10071800067, 101196.10071800067, 101353.00887033393, 101183.2512610746, 101652.99312562274, 101459.06370110912, 101116.4231809041, 101116.4231809041, 101116.4231809041, 100936.90684955343, 101033.95615085521, 101148.96062825319, 100850.68639576423, 100862.73098212047, 100862.73098212047, 100862.73098212047, 101068.3240104299, 101038.87705801478, 101416.15415348992, 101705.4411279374, 101511.72633201088, 101511.72633201088, 101511.72633201088, 101288.51608849285, 101176.25614806723, 101489.14752393602, 101856.36363187333, 101513.20680964197, 101513.20680964197, 101513.20680964197, 101315.59017524635, 101399.6689225382, 101327.10471430425, 101754.67618752253, 101189.03944646144, 101189.03944646144, 101189.03944646144, 101173.88725606105, 101183.46636201274, 101045.8135783343, 101147.04568079073, 101145.4729422602, 101145.4729422602, 101145.4729422602, 100983.45691854188, 101247.02263732132, 101318.64694437617, 101703.24496598495, 102062.6559179549, 102062.6559179549, 102062.6559179549, 102448.42764080002, 102653.41309149392, 102774.12916577072, 102614.64204592994, 102715.75341551998, 102715.75341551998, 102715.75341551998, 102841.41271980556, 102926.26934049281, 103163.29106841632, 103578.83390876917, 103861.47249960384, 103861.47249960384, 103861.47249960384, 103993.07702510885, 104354.19207007214, 104650.743014302, 104391.12139112371, 104192.08432879092, 104192.08432879092, 104192.08432879092, 104120.30712545903, 104126.55106180397, 104180.03639904244, 104224.96335864216, 104143.14838950918, 104143.14838950918, 104143.14838950918, 104202.834788634, 104039.23747099403, 104184.64237965085, 104477.96526851036, 104223.45312934337, 104223.45312934337, 104223.45312934337, 103997.0979876297, 103407.79221178358, 103178.930120731, 103241.72521490254, 103425.54001645418, 103425.54001645418, 103425.54001645418, 103432.11405019494, 103448.59203946208, 103383.1443837971, 103332.38987945042, 103296.56897181441, 103296.56897181441, 103296.56897181441, 103198.76308726805, 103310.95718493877, 103285.66251242594, 102832.61965435448, 103026.69265475542, 103026.69265475542, 103026.69265475542, 103219.24123044884, 103362.73476599688, 103166.76759908043, 103241.20635100639, 103152.33928205234, 103152.33928205234, 103152.33928205234, 103096.11902104465, 102539.89758107677, 102141.00626621296, 102430.3304173559, 102740.68596709603, 102740.68596709603, 102740.68596709603, 103071.17801889949, 103026.95380293598, 102630.42163655908, 102565.56286030752, 103187.29240439026, 103187.29240439026, 103187.29240439026, 102812.54006331688, 102325.70452069654, 101998.70454415402, 101658.46201742758, 101904.36956011169, 101904.36956011169, 101904.36956011169, 101560.41177881934, 101886.33744850245, 102095.3703377957, 101822.56194601374, 101985.49511751282, 101985.49511751282, 101985.49511751282, 102243.62092333223, 101808.66762401952, 102286.10512831647, 102516.16770729714, 102175.74350801599, 102175.74350801599, 102175.74350801599, 102156.86731885283, 102081.23725072751, 102214.01397378698, 102179.74523898042, 101819.72454184646, 101819.72454184646, 101819.72454184646, 102116.33890851462, 102335.66830161083, 102083.52676355884, 102121.64824868261, 102148.55256611019, 102148.55256611019, 102148.55256611019, 102114.14037775563, 101954.7454915023, 102017.64794096726, 101876.77796619065, 102020.96160832241, 102020.96160832241, 102020.96160832241, 101925.89274494634, 101944.56517884716, 102232.0697372136, 102426.27798571571, 102070.68657053795, 102070.68657053795, 102070.68657053795, 101899.41141945057, 101653.67797196863, 101682.39332808892, 101776.9068388222, 101932.13164840908, 101932.13164840908, 101932.13164840908, 101805.38685160808, 101546.9172811439, 101528.09236271083, 101512.8291221294, 101755.47935885645, 101755.47935885645, 101755.47935885645, 101719.16262443627, 101557.0570559212, 101751.234590887, 101725.82931272639, 101628.79151253824, 101628.79151253824, 101628.79151253824, 101494.83252191127, 101757.19693179354, 101588.64689602911, 101719.16287626512, 101892.56180426259, 101892.56180426259, 101892.56180426259, 102304.04364948893, 102670.69871463184, 102294.47975520068, 101977.15345625971, 102372.91140716504, 102372.91140716504, 102372.91140716504, 102294.6627335071, 101861.17808814585, 101783.42431702242, 101948.05370222348, 102102.59825908666, 102102.59825908666, 102102.59825908666, 101923.23933391967, 101351.24048798252, 101660.06169920211, 102143.22150478867, 102057.41834164043, 102057.41834164043, 102057.41834164043, 101751.82309803803, 102144.66878980058, 102273.38359192401, 102199.45805657482, 102681.58463197276, 102681.58463197276, 102681.58463197276, 103279.21478263325, 103360.46664875091, 103230.73190886069, 103335.08157878931, 103441.76634747506, 103441.76634747506, 103441.76634747506, 103501.29472441667, 103295.89546527102, 103559.9191494311, 103460.86467602689, 103456.111570574, 103456.111570574, 103456.111570574, 103472.9018868379, 103443.39730246474, 103700.32612463346, 103656.75408523121, 103242.0308356011, 103242.0308356011, 103242.0308356011, 103263.87630939198, 102876.57920501857, 102771.23647499466, 102806.74022362725, 102993.16033686495, 102993.16033686495, 102993.16033686495, 102805.02905182044, 102911.73259558938, 102675.21510702769, 102633.8675374088, 102406.07638767423, 102406.07638767423, 102406.07638767423, 102483.74592600316, 102582.36625741572, 102334.70042546937, 102501.43866796116, 102303.94136224072, 102303.94136224072, 102303.94136224072, 102267.38455971732, 102238.81038801641, 102116.0600885342, 102294.83065851333, 101987.03951585338, 101987.03951585338, 101987.03951585338, 101857.16221466559, 101598.19844320294, 101427.67872157451, 101111.23088073175, 100906.82880358622, 100906.82880358622, 100906.82880358622, 100808.78982990884, 100838.2472757938, 101042.9544185229, 100778.47146191543, 100873.80045726773, 100873.80045726773, 100873.80045726773, 100940.37324076585, 101379.63842350828, 101415.08525932707, 101598.33639710667, 101365.57359457827, 101365.57359457827, 101365.57359457827, 101356.76995943676, 101328.41368019702, 101290.33577763407, 100960.03468036462, 101352.07383699658, 101352.07383699658, 101352.07383699658, 100960.87752240855, 100613.607274927, 100822.49925035295, 100973.34709122006, 101349.42172489234, 101349.42172489234, 101349.42172489234, 101351.30728423948, 101510.74425554584, 101273.6433595559, 101074.4557815188, 101087.32405091985, 101087.32405091985, 101087.32405091985, 100992.39250247847, 101173.69888226701, 101261.97361537268, 101516.52917603096, 101586.1973900729, 101586.1973900729, 101586.1973900729, 101347.79377893121, 101534.33552675601, 101520.88058705677, 101664.87916409803, 101773.0028836657, 101773.0028836657, 101773.0028836657, 101851.99479450643, 102102.17814755134, 102149.44979687361, 102177.74560384071, 102455.30340540948, 102455.30340540948, 102455.30340540948, 102503.77627566393, 102697.91659887959, 102919.33296951264, 102919.98803457656, 103577.40383229262, 103577.40383229262, 103577.40383229262, 103638.27551390496, 103137.28146195287, 102800.50371100224, 102813.98028644218, 103163.57250461573, 103163.57250461573, 103163.57250461573, 102780.17584688464, 102834.14757818243, 103245.52773462588, 103194.94727261539, 103426.48284007, 103426.48284007, 103426.48284007, 103645.41770255312, 104080.97246245894, 104083.85105557565, 104474.56746877148, 104322.51785417707, 104322.51785417707, 104322.51785417707, 104105.87422882242, 104269.87401608282, 104500.5612562549, 104152.73917734798, 103919.96338588442, 103919.96338588442, 103919.96338588442, 104159.84907810093, 103954.792495039, 104208.0925997979, 104327.57604858009, 104023.50024140006, 104023.50024140006, 104023.50024140006, 104064.69870523695, 103986.59111265454, 104406.73407066119, 104286.72891162647, 104342.80302253115, 104342.80302253115, 104342.80302253115, 104294.92632155691, 104001.97913695645, 104333.8334778581, 104582.53603845616, 104277.85118124352, 104277.85118124352, 104277.85118124352, 104487.32975984659, 104738.70013051684, 104659.42025686844, 104403.87565382177, 104059.51639404031, 104059.51639404031, 104059.51639404031, 104059.15157544884, 103802.85894170866, 103933.04693229918, 103623.56564350537, 103417.34800502905, 103417.34800502905, 103417.34800502905, 103889.96838159818, 104010.76000692204, 103667.42097821785, 103472.2580082746, 103096.51935667734, 103096.51935667734, 103096.51935667734, 103313.6886474033, 103076.42740107668, 103191.55371337617, 103161.30527586021, 103431.39576096894, 103431.39576096894, 103431.39576096894, 103446.07915796008, 103708.14649068651, 103813.95199238975, 104021.23178989586, 104216.7843734959, 104216.7843734959, 104216.7843734959, 104192.58609553069, 104228.6020390642, 103983.35746120368, 103866.117933456, 103677.63866189553, 103677.63866189553, 103677.63866189553, 103591.75027430951, 103717.21462633548, 103658.13079915065, 103774.20534576202, 103489.11211488943, 103489.11211488943, 103489.11211488943, 103820.3633216105, 104170.59896747107, 104149.17392930196, 103960.35859872331, 104324.39299194433, 104324.39299194433, 104324.39299194433, 104126.5851360597, 104403.92713869107, 104286.92193442193, 104250.4495627362, 104234.29865820249, 104234.29865820249, 104234.29865820249, 104375.71897929869, 104619.89041831953, 104311.77902485442, 104398.25260797775, 104458.26936221728, 104458.26936221728, 104458.26936221728, 104119.56596330352, 104135.99004127135, 104785.19056236703, 105155.96761648427, 104952.98819074206, 104952.98819074206, 104952.98819074206, 105018.0723174588, 104797.32607019023, 104938.3083292082, 105045.48682691657, 105065.81920464706, 105065.81920464706, 105065.81920464706, 104515.20778605496, 104254.74524123245, 104232.68896386889, 104194.85076253433, 103813.75145307579, 103813.75145307579, 103813.75145307579, 104065.97809003934, 103857.25651683836, 103519.55306203695, 103941.20763005386, 104246.02510129646, 104246.02510129646, 104246.02510129646, 104695.66192618196, 104999.33338176529, 104923.66450079173, 104710.81895759224, 104309.41797472269, 104309.41797472269, 104309.41797472269, 104465.9321378929, 104753.06166058203, 105169.31448447055, 105522.89042779835, 105588.61909118763, 105588.61909118763, 105588.61909118763, 105476.57477284447, 105707.16794383083, 105313.81094354315, 105415.24121543675, 105727.40578729459, 105727.40578729459, 105727.40578729459, 105861.94707018917, 105705.97391228823, 105252.27619292575, 105030.7626323555, 105142.29224359113, 105142.29224359113, 105142.29224359113, 105275.25036452775, 105275.95053038295, 105104.95148145172, 104788.09074354495, 104604.37964657301, 104604.37964657301, 104604.37964657301, 104537.49274690068, 104489.986989789, 104829.9364421872, 104939.577951638, 104937.34007523186, 104937.34007523186, 104937.34007523186, 105126.84534682598, 104745.31378365957, 104939.41753319968, 104541.78017913306, 104826.97228362388, 104826.97228362388, 104826.97228362388, 105030.26994028813, 105232.48735506629, 105243.6822517931, 105740.21316624945, 106152.06377052245, 106152.06377052245, 106152.06377052245, 106559.90792422861, 106401.22665877544, 106180.6606608663, 105698.26766839245, 105437.51581080392, 105437.51581080392, 105437.51581080392, 105713.93431202587, 105942.33925174747, 106080.27588671763, 106353.65350551359, 106106.4593328255, 106106.4593328255, 106106.4593328255, 106714.476395462, 106532.26809076747, 106556.53810465464, 106744.88199092058, 106638.39849201537, 106638.39849201537, 106638.39849201537, 106150.97452927695, 106328.45396107834, 106765.35157444308, 106677.37476665087, 106935.48192383401, 106935.48192383401, 106935.48192383401, 107364.11790315693, 107200.87991441172, 107105.3033170834, 106919.87349082789, 106900.19222146968, 106900.19222146968, 106900.19222146968, 106985.55413999359, 107029.83671948506, 106798.5156248486, 106998.40216767619, 106797.48345938502, 106797.48345938502, 106797.48345938502, 106597.98129836406, 107112.85173109712, 107008.99454996287, 107236.67654776509, 107214.81807389646, 107214.81807389646, 107214.81807389646, 107045.9499738293, 106964.88097463312, 107175.57077180335, 106851.01788237551, 107093.01412165139, 107093.01412165139, 107093.01412165139, 106942.83194404835, 106822.66711314113, 106479.90887702347, 106555.34398260555, 106793.39660093404, 106793.39660093404, 106793.39660093404, 106909.07495278917, 106900.9644011455, 107048.30474062453, 107492.20477109379, 107399.48994873525, 107399.48994873525, 107399.48994873525, 107200.16682697594, 106680.21891686064, 106988.5127159904, 106901.19306609884, 107192.68522436614, 107192.68522436614, 107192.68522436614, 107190.03035112194, 106925.71680688241, 106671.91524642025, 106782.37520287142, 106970.5462523619, 106970.5462523619, 106970.5462523619, 106808.04994102987, 106627.2259300841, 106735.53215610384, 107379.97864906484, 106958.19677089163, 106958.19677089163, 106958.19677089163, 107023.55845036174, 107086.71920671524, 107334.44556904086, 107044.02938227708, 106881.04241274777, 106881.04241274777, 106881.04241274777, 106944.39759143791, 106952.92385516912, 107191.6707542135, 107123.4436300757, 107000.99219937006, 107000.99219937006, 107000.99219937006, 106953.86240573658, 106854.56128137716, 106819.27534087287, 106646.19921836015, 106512.39725296712, 106512.39725296712, 106512.39725296712, 106014.09731152633, 105739.0097436709, 105418.38072653266, 105847.53777943744, 105676.96555943045, 105676.96555943045, 105676.96555943045, 105753.41365280279, 106007.6852974401, 105695.62380087937, 105835.4041492423, 105752.68590780572, 105752.68590780572, 105752.68590780572, 106066.05616364605, 106252.3701080516, 106410.0164008514, 106291.2497566792, 106205.53879128007, 106205.53879128007, 106205.53879128007, 106175.78429686994, 105877.10029002215, 105808.10334135182, 105623.53752986807, 105516.37234012785, 105516.37234012785, 105516.37234012785, 105346.11954768703, 105160.3860710054, 105193.14151423171, 105391.36920929918, 105292.9900462185, 105292.9900462185, 105292.9900462185, 105053.80746579551, 105410.4771285963, 105952.49915409481, 106081.40335980756, 105745.18459051062, 105745.18459051062, 105745.18459051062, 105273.10244714838, 105519.22240097402, 105141.83822262581, 104825.31555626233, 105447.34022902205, 105447.34022902205, 105447.34022902205, 105201.5041115275, 105543.85691719907, 105775.12793483233, 105957.0324961929, 106544.59555868353, 106544.59555868353, 106544.59555868353, 106649.08488588544, 106781.87075961137, 106811.93223980366, 107030.84206207094, 106768.91978138118, 106768.91978138118, 106768.91978138118, 107163.62171619199, 107201.76900205444, 107430.0620860779, 107026.18839309437, 107329.92320871705, 107329.92320871705, 107329.92320871705, 107101.35460340479, 106765.40137148273, 106983.86911544608, 107014.13106342265, 106916.50406171728, 106916.50406171728, 106916.50406171728, 106752.63775863274, 107013.79418268008, 107647.79863284362, 107741.04851802211, 108226.96886958426, 108226.96886958426, 108226.96886958426, 108133.0345161159, 107525.23706515116, 107572.08344501499, 107575.1213216669, 107171.84719382596, 107171.84719382596, 107171.84719382596, 106964.0800533038, 106840.4494141564, 106534.37996879668, 106664.41729133608, 106615.92308980241, 106615.92308980241, 106615.92308980241, 107106.83483281196, 107054.13843778477, 107313.07535989635, 107292.25214282135, 107648.13881349028, 107648.13881349028, 107648.13881349028, 107537.53747459917, 107402.92184260944, 107717.34183640147, 107778.23760521362, 108263.95577888703, 108263.95577888703, 108263.95577888703, 108203.1696154025, 108414.2097599927, 108475.04183930939, 108639.61884608804, 108422.96113199514, 108422.96113199514, 108422.96113199514, 108643.36813213598, 108182.45442332624, 107798.53266516895, 107862.0812015614, 107590.61713132556, 107590.61713132556, 107590.61713132556, 107383.63301164983, 107536.17849825986, 107619.6025952725, 107453.46604494599, 107418.29535566008, 107418.29535566008, 107418.29535566008, 106992.85880529496, 106966.99401699626, 107135.17739609405, 107020.64760573686, 106459.14373636668, 106459.14373636668, 106459.14373636668, 106680.6781066212, 106441.32182636994, 106984.31112754522, 107021.62770119519, 107063.36274095089, 107063.36274095089, 107063.36274095089, 107190.58511369972, 107013.21533701653, 106665.06964990479, 106972.73965476418, 106890.71748832264, 106890.71748832264, 106890.71748832264, 106812.87734297049, 106493.73423836744, 106707.7605062545, 106719.85515973257, 106976.81614979895, 106976.81614979895, 106976.81614979895, 107348.3250728558, 106849.57028952832, 106865.75535034639, 106885.48310700743, 107014.4014292266, 107014.4014292266, 107014.4014292266, 107052.26143257567, 107259.09027961275, 106962.41281012158, 107085.24469580606, 107225.90012510173, 107225.90012510173, 107225.90012510173, 107382.33178937886, 107861.54462910592, 108115.5279658325, 108331.25735865367, 108293.0525351612, 108293.0525351612, 108293.0525351612, 108673.64384127178, 108805.07233737447, 108621.4338656564, 108571.40864302611, 108606.13939890554, 108606.13939890554, 108606.13939890554, 108344.58651348518, 108751.74915943519, 108484.25125554591, 108348.09495126797, 108469.77103864256, 108469.77103864256, 108469.77103864256, 108789.70101826184, 109010.72103293485, 109021.9650435459, 108872.39452017317, 108907.51026533262, 108907.51026533262, 108907.51026533262, 108916.66890693543, 108372.88773023384, 108488.10471791521, 108668.53787529349, 108648.53746899788, 108648.53746899788, 108648.53746899788, 108760.46025100516, 109048.31709380739, 109287.0383646673, 109459.82706225093, 109325.57567945035, 109325.57567945035, 109325.57567945035, 109030.10060788927, 108889.24054715768, 109088.27813467925, 108604.2957120219, 108484.52518050684, 108484.52518050684, 108484.52518050684, 108212.874955001, 108433.09705832723, 108442.41331221047, 108753.99789066796, 109270.90668411314, 109270.90668411314, 109270.90668411314, 108921.01158697181, 108458.67512124151, 108360.28093523189, 108848.15375052369, 108801.70891089705, 108801.70891089705, 108801.70891089705, 108899.71881388169, 108393.02011227547, 108970.8771980957, 109030.62875529862, 109063.99476820094, 109063.99476820094, 109063.99476820094, 108884.36902461256, 108393.73790187892, 108859.33823876243, 109039.28459180641, 108884.17713300331, 108884.17713300331, 108884.17713300331, 108721.1969422962, 108742.32725776234, 109085.9651296495, 108968.7880454514, 108587.29223534281, 108587.29223534281, 108587.29223534281, 108041.46171134108, 108129.09724285876, 108223.66174319273, 108474.92419512392, 108592.31902504008, 108592.31902504008, 108592.31902504008, 108226.92252341015, 108861.77771308151, 108967.69262208175, 108914.76603656591, 108940.76058573293, 108940.76058573293, 108940.76058573293, 108946.92113793685, 108999.50033058936, 109526.33446917837, 109507.16365823275, 109729.26993565858, 109729.26993565858, 109729.26993565858, 109446.85017933391, 109437.14452338609, 109280.5527383564, 109524.15298571764, 109528.22963255722, 109528.22963255722, 109528.22963255722, 109917.06020207514, 109788.32480156585, 110084.03836735981, 110360.59695501922, 110397.97528719995, 110397.97528719995, 110397.97528719995, 110454.61365648857, 110724.89965679374, 110678.17963979853, 110781.12858072273, 111239.343689078, 111239.343689078, 111239.343689078, 111250.01300493322, 110901.14247107483, 110472.95531536071, 110532.04798059104, 110171.1887635527, 110171.1887635527, 110171.1887635527, 109858.79411718933, 109618.41253954449, 109791.12434249395, 109692.73741222761, 109518.94847795652, 109518.94847795652, 109518.94847795652, 109632.39763942166, 110162.49847979116, 109944.33528548945, 110061.22133416109, 110065.42760644248]
-    /*real_values]*/
+                [99850.6997185983, 99742.0231676432, 100055.53407658641, 100055.53407658641, 100055.53407658641, 99857.77178341977, 100033.6096790379, 100271.97306745776, 100231.97985971576, 100448.17192998332, 100448.17192998332, 100448.17192998332, 100488.93102552947, 100519.28087604177, 100754.09971922069, 100846.73340216064, 100795.43478506399, 100795.43478506399, 100795.43478506399, 100942.05756947529, 101032.10914517689, 101055.50914346351, 100971.85614446245, 100806.48618622267, 100806.48618622267, 100806.48618622267, 100882.74174674493, 100938.41130333692, 101090.26978862478, 101198.17976952839, 101202.49549584964, 101202.49549584964, 101202.49549584964, 101424.61011260042, 101402.89365052729, 101147.61331784698, 101130.78734190896, 101098.65488174724, 101098.65488174724, 101098.65488174724, 101088.53861667425, 101340.56594993237, 101323.2588641308, 101284.14253288243, 101079.43460320731, 101079.43460320731, 101079.43460320731, 100890.90494374378, 100863.44327740779, 100952.75087763372, 100996.04924783934, 100987.03660395772, 100987.03660395772, 100987.03660395772, 100886.55047646313, 100639.01526365902, 100565.64247705512, 100255.33603587671, 100359.17189993792, 100359.17189993792, 100359.17189993792, 100564.32513799187, 100563.83800707848, 100588.691201987, 100481.39045726779, 100226.7344545864, 100226.7344545864, 100226.7344545864, 100518.62517582, 100742.10812380328, 100511.60698568591, 100515.78755027053, 100758.50167375685, 100758.50167375685, 100758.50167375685, 100588.52298812005, 100560.12714955688, 100582.68737944268, 100744.05282920974, 100912.3462182843, 100912.3462182843, 100912.3462182843, 101004.19153378149, 101082.21349581932, 101023.85103175888, 101028.91250110252, 101308.48238709779, 101308.48238709779, 101308.48238709779, 101188.54453146932, 101458.5099481293, 101575.45816092094, 101514.66049519103, 101407.96960943479, 101407.96960943479, 101407.96960943479, 101412.14697811806, 101417.8853016411, 101340.48498381338, 101121.02076352401, 101098.79592382876, 101098.79592382876, 101098.79592382876, 101258.64000224309, 101314.08225343579, 101187.07728700957, 101269.21788243575, 101196.10071800067, 101196.10071800067, 101196.10071800067, 101353.00887033393, 101183.2512610746, 101652.99312562274, 101459.06370110912, 101116.4231809041, 101116.4231809041, 101116.4231809041, 100936.90684955343, 101033.95615085521, 101148.96062825319, 100850.68639576423, 100862.73098212047, 100862.73098212047, 100862.73098212047, 101068.3240104299, 101038.87705801478, 101416.15415348992, 101705.4411279374, 101511.72633201088, 101511.72633201088, 101511.72633201088, 101288.51608849285, 101176.25614806723, 101489.14752393602, 101856.36363187333, 101513.20680964197, 101513.20680964197, 101513.20680964197, 101315.59017524635, 101399.6689225382, 101327.10471430425, 101754.67618752253, 101189.03944646144, 101189.03944646144, 101189.03944646144, 101173.88725606105, 101183.46636201274, 101045.8135783343, 101147.04568079073, 101145.4729422602, 101145.4729422602, 101145.4729422602, 100983.45691854188, 101247.02263732132, 101318.64694437617, 101703.24496598495, 102062.6559179549, 102062.6559179549, 102062.6559179549, 102448.42764080002, 102653.41309149392, 102774.12916577072, 102614.64204592994, 102715.75341551998, 102715.75341551998, 102715.75341551998, 102841.41271980556, 102926.26934049281, 103163.29106841632, 103578.83390876917, 103861.47249960384, 103861.47249960384, 103861.47249960384, 103993.07702510885, 104354.19207007214, 104650.743014302, 104391.12139112371, 104192.08432879092, 104192.08432879092, 104192.08432879092, 104120.30712545903, 104126.55106180397, 104180.03639904244, 104224.96335864216, 104143.14838950918, 104143.14838950918, 104143.14838950918, 104202.834788634, 104039.23747099403, 104184.64237965085, 104477.96526851036, 104223.45312934337, 104223.45312934337, 104223.45312934337, 103997.0979876297, 103407.79221178358, 103178.930120731, 103241.72521490254, 103425.54001645418, 103425.54001645418, 103425.54001645418, 103432.11405019494, 103448.59203946208, 103383.1443837971, 103332.38987945042, 103296.56897181441, 103296.56897181441, 103296.56897181441, 103198.76308726805, 103310.95718493877, 103285.66251242594, 102832.61965435448, 103026.69265475542, 103026.69265475542, 103026.69265475542, 103219.24123044884, 103362.73476599688, 103166.76759908043, 103241.20635100639, 103152.33928205234, 103152.33928205234, 103152.33928205234, 103096.11902104465, 102539.89758107677, 102141.00626621296, 102430.3304173559, 102740.68596709603, 102740.68596709603, 102740.68596709603, 103071.17801889949, 103026.95380293598, 102630.42163655908, 102565.56286030752, 103187.29240439026, 103187.29240439026, 103187.29240439026, 102812.54006331688, 102325.70452069654, 101998.70454415402, 101658.46201742758, 101904.36956011169, 101904.36956011169, 101904.36956011169, 101560.41177881934, 101886.33744850245, 102095.3703377957, 101822.56194601374, 101985.49511751282, 101985.49511751282, 101985.49511751282, 102243.62092333223, 101808.66762401952, 102286.10512831647, 102516.16770729714, 102175.74350801599, 102175.74350801599, 102175.74350801599, 102156.86731885283, 102081.23725072751, 102214.01397378698, 102179.74523898042, 101819.72454184646, 101819.72454184646, 101819.72454184646, 102116.33890851462, 102335.66830161083, 102083.52676355884, 102121.64824868261, 102148.55256611019, 102148.55256611019, 102148.55256611019, 102114.14037775563, 101954.7454915023, 102017.64794096726, 101876.77796619065, 102020.96160832241, 102020.96160832241, 102020.96160832241, 101925.89274494634, 101944.56517884716, 102232.0697372136, 102426.27798571571, 102070.68657053795, 102070.68657053795, 102070.68657053795, 101899.41141945057, 101653.67797196863, 101682.39332808892, 101776.9068388222, 101932.13164840908, 101932.13164840908, 101932.13164840908, 101805.38685160808, 101546.9172811439, 101528.09236271083, 101512.8291221294, 101755.47935885645, 101755.47935885645, 101755.47935885645, 101719.16262443627, 101557.0570559212, 101751.234590887, 101725.82931272639, 101628.79151253824, 101628.79151253824, 101628.79151253824, 101494.83252191127, 101757.19693179354, 101588.64689602911, 101719.16287626512, 101892.56180426259, 101892.56180426259, 101892.56180426259, 102304.04364948893, 102670.69871463184, 102294.47975520068, 101977.15345625971, 102372.91140716504, 102372.91140716504, 102372.91140716504, 102294.6627335071, 101861.17808814585, 101783.42431702242, 101948.05370222348, 102102.59825908666, 102102.59825908666, 102102.59825908666, 101923.23933391967, 101351.24048798252, 101660.06169920211, 102143.22150478867, 102057.41834164043, 102057.41834164043, 102057.41834164043, 101751.82309803803, 102144.66878980058, 102273.38359192401, 102199.45805657482, 102681.58463197276, 102681.58463197276, 102681.58463197276, 103279.21478263325, 103360.46664875091, 103230.73190886069, 103335.08157878931, 103441.76634747506, 103441.76634747506, 103441.76634747506, 103501.29472441667, 103295.89546527102, 103559.9191494311, 103460.86467602689, 103456.111570574, 103456.111570574, 103456.111570574, 103472.9018868379, 103443.39730246474, 103700.32612463346, 103656.75408523121, 103242.0308356011, 103242.0308356011, 103242.0308356011, 103263.87630939198, 102876.57920501857, 102771.23647499466, 102806.74022362725, 102993.16033686495, 102993.16033686495, 102993.16033686495, 102805.02905182044, 102911.73259558938, 102675.21510702769, 102633.8675374088, 102406.07638767423, 102406.07638767423, 102406.07638767423, 102483.74592600316, 102582.36625741572, 102334.70042546937, 102501.43866796116, 102303.94136224072, 102303.94136224072, 102303.94136224072, 102267.38455971732, 102238.81038801641, 102116.0600885342, 102294.83065851333, 101987.03951585338, 101987.03951585338, 101987.03951585338, 101857.16221466559, 101598.19844320294, 101427.67872157451, 101111.23088073175, 100906.82880358622, 100906.82880358622, 100906.82880358622, 100808.78982990884, 100838.2472757938, 101042.9544185229, 100778.47146191543, 100873.80045726773, 100873.80045726773, 100873.80045726773, 100940.37324076585, 101379.63842350828, 101415.08525932707, 101598.33639710667, 101365.57359457827, 101365.57359457827, 101365.57359457827, 101356.76995943676, 101328.41368019702, 101290.33577763407, 100960.03468036462, 101352.07383699658, 101352.07383699658, 101352.07383699658, 100960.87752240855, 100613.607274927, 100822.49925035295, 100973.34709122006, 101349.42172489234, 101349.42172489234, 101349.42172489234, 101351.30728423948, 101510.74425554584, 101273.6433595559, 101074.4557815188, 101087.32405091985, 101087.32405091985, 101087.32405091985, 100992.39250247847, 101173.69888226701, 101261.97361537268, 101516.52917603096, 101586.1973900729, 101586.1973900729, 101586.1973900729, 101347.79377893121, 101534.33552675601, 101520.88058705677, 101664.87916409803, 101773.0028836657, 101773.0028836657, 101773.0028836657, 101851.99479450643, 102102.17814755134, 102149.44979687361, 102177.74560384071, 102455.30340540948, 102455.30340540948, 102455.30340540948, 102503.77627566393, 102697.91659887959, 102919.33296951264, 102919.98803457656, 103577.40383229262, 103577.40383229262, 103577.40383229262, 103638.27551390496, 103137.28146195287, 102800.50371100224, 102813.98028644218, 103163.57250461573, 103163.57250461573, 103163.57250461573, 102780.17584688464, 102834.14757818243, 103245.52773462588, 103194.94727261539, 103426.48284007, 103426.48284007, 103426.48284007, 103645.41770255312, 104080.97246245894, 104083.85105557565, 104474.56746877148, 104322.51785417707, 104322.51785417707, 104322.51785417707, 104105.87422882242, 104269.87401608282, 104500.5612562549, 104152.73917734798, 103919.96338588442, 103919.96338588442, 103919.96338588442, 104159.84907810093, 103954.792495039, 104208.0925997979, 104327.57604858009, 104023.50024140006, 104023.50024140006, 104023.50024140006, 104064.69870523695, 103986.59111265454, 104406.73407066119, 104286.72891162647, 104342.80302253115, 104342.80302253115, 104342.80302253115, 104294.92632155691, 104001.97913695645, 104333.8334778581, 104582.53603845616, 104277.85118124352, 104277.85118124352, 104277.85118124352, 104487.32975984659, 104738.70013051684, 104659.42025686844, 104403.87565382177, 104059.51639404031, 104059.51639404031, 104059.51639404031, 104059.15157544884, 103802.85894170866, 103933.04693229918, 103623.56564350537, 103417.34800502905, 103417.34800502905, 103417.34800502905, 103889.96838159818, 104010.76000692204, 103667.42097821785, 103472.2580082746, 103096.51935667734, 103096.51935667734, 103096.51935667734, 103313.6886474033, 103076.42740107668, 103191.55371337617, 103161.30527586021, 103431.39576096894, 103431.39576096894, 103431.39576096894, 103446.07915796008, 103708.14649068651, 103813.95199238975, 104021.23178989586, 104216.7843734959, 104216.7843734959, 104216.7843734959, 104192.58609553069, 104228.6020390642, 103983.35746120368, 103866.117933456, 103677.63866189553, 103677.63866189553, 103677.63866189553, 103591.75027430951, 103717.21462633548, 103658.13079915065, 103774.20534576202, 103489.11211488943, 103489.11211488943, 103489.11211488943, 103820.3633216105, 104170.59896747107, 104149.17392930196, 103960.35859872331, 104324.39299194433, 104324.39299194433, 104324.39299194433, 104126.5851360597, 104403.92713869107, 104286.92193442193, 104250.4495627362, 104234.29865820249, 104234.29865820249, 104234.29865820249, 104375.71897929869, 104619.89041831953, 104311.77902485442, 104398.25260797775, 104458.26936221728, 104458.26936221728, 104458.26936221728, 104119.56596330352, 104135.99004127135, 104785.19056236703, 105155.96761648427, 104952.98819074206, 104952.98819074206, 104952.98819074206, 105018.0723174588, 104797.32607019023, 104938.3083292082, 105045.48682691657, 105065.81920464706, 105065.81920464706, 105065.81920464706, 104515.20778605496, 104254.74524123245, 104232.68896386889, 104194.85076253433, 103813.75145307579, 103813.75145307579, 103813.75145307579, 104065.97809003934, 103857.25651683836, 103519.55306203695, 103941.20763005386, 104246.02510129646, 104246.02510129646, 104246.02510129646, 104695.66192618196, 104999.33338176529, 104923.66450079173, 104710.81895759224, 104309.41797472269, 104309.41797472269, 104309.41797472269, 104465.9321378929, 104753.06166058203, 105169.31448447055, 105522.89042779835, 105588.61909118763, 105588.61909118763, 105588.61909118763, 105476.57477284447, 105707.16794383083, 105313.81094354315, 105415.24121543675, 105727.40578729459, 105727.40578729459, 105727.40578729459, 105861.94707018917, 105705.97391228823, 105252.27619292575, 105030.7626323555, 105142.29224359113, 105142.29224359113, 105142.29224359113, 105275.25036452775, 105275.95053038295, 105104.95148145172, 104788.09074354495, 104604.37964657301, 104604.37964657301, 104604.37964657301, 104537.49274690068, 104489.986989789, 104829.9364421872, 104939.577951638, 104937.34007523186, 104937.34007523186, 104937.34007523186, 105126.84534682598, 104745.31378365957, 104939.41753319968, 104541.78017913306, 104826.97228362388, 104826.97228362388, 104826.97228362388, 105030.26994028813, 105232.48735506629, 105243.6822517931, 105740.21316624945, 106152.06377052245, 106152.06377052245, 106152.06377052245, 106559.90792422861, 106401.22665877544, 106180.6606608663, 105698.26766839245, 105437.51581080392, 105437.51581080392, 105437.51581080392, 105713.93431202587, 105942.33925174747, 106080.27588671763, 106353.65350551359, 106106.4593328255, 106106.4593328255, 106106.4593328255, 106714.476395462, 106532.26809076747, 106556.53810465464, 106744.88199092058, 106638.39849201537, 106638.39849201537, 106638.39849201537, 106150.97452927695, 106328.45396107834, 106765.35157444308, 106677.37476665087, 106935.48192383401, 106935.48192383401, 106935.48192383401, 107364.11790315693, 107200.87991441172, 107105.3033170834, 106919.87349082789, 106900.19222146968, 106900.19222146968, 106900.19222146968, 106985.55413999359, 107029.83671948506, 106798.5156248486, 106998.40216767619, 106797.48345938502, 106797.48345938502, 106797.48345938502, 106597.98129836406, 107112.85173109712, 107008.99454996287, 107236.67654776509, 107214.81807389646, 107214.81807389646, 107214.81807389646, 107045.9499738293, 106964.88097463312, 107175.57077180335, 106851.01788237551, 107093.01412165139, 107093.01412165139, 107093.01412165139, 106942.83194404835, 106822.66711314113, 106479.90887702347, 106555.34398260555, 106793.39660093404, 106793.39660093404, 106793.39660093404, 106909.07495278917, 106900.9644011455, 107048.30474062453, 107492.20477109379, 107399.48994873525, 107399.48994873525, 107399.48994873525, 107200.16682697594, 106680.21891686064, 106988.5127159904, 106901.19306609884, 107192.68522436614, 107192.68522436614, 107192.68522436614, 107190.03035112194, 106925.71680688241, 106671.91524642025, 106782.37520287142, 106970.5462523619, 106970.5462523619, 106970.5462523619, 106808.04994102987, 106627.2259300841, 106735.53215610384, 107379.97864906484, 106958.19677089163, 106958.19677089163, 106958.19677089163, 107023.55845036174, 107086.71920671524, 107334.44556904086, 107044.02938227708, 106881.04241274777, 106881.04241274777, 106881.04241274777, 106944.39759143791, 106952.92385516912, 107191.6707542135, 107123.4436300757, 107000.99219937006, 107000.99219937006, 107000.99219937006, 106953.86240573658, 106854.56128137716, 106819.27534087287, 106646.19921836015, 106512.39725296712, 106512.39725296712, 106512.39725296712, 106014.09731152633, 105739.0097436709, 105418.38072653266, 105847.53777943744, 105676.96555943045, 105676.96555943045, 105676.96555943045, 105753.41365280279, 106007.6852974401, 105695.62380087937, 105835.4041492423, 105752.68590780572, 105752.68590780572, 105752.68590780572, 106066.05616364605, 106252.3701080516, 106410.0164008514, 106291.2497566792, 106205.53879128007, 106205.53879128007, 106205.53879128007, 106175.78429686994, 105877.10029002215, 105808.10334135182, 105623.53752986807, 105516.37234012785, 105516.37234012785, 105516.37234012785, 105346.11954768703, 105160.3860710054, 105193.14151423171, 105391.36920929918, 105292.9900462185, 105292.9900462185, 105292.9900462185, 105053.80746579551, 105410.4771285963, 105952.49915409481, 106081.40335980756, 105745.18459051062, 105745.18459051062, 105745.18459051062, 105273.10244714838, 105519.22240097402, 105141.83822262581, 104825.31555626233, 105447.34022902205, 105447.34022902205, 105447.34022902205, 105201.5041115275, 105543.85691719907, 105775.12793483233, 105957.0324961929, 106544.59555868353, 106544.59555868353, 106544.59555868353, 106649.08488588544, 106781.87075961137, 106811.93223980366, 107030.84206207094, 106768.91978138118, 106768.91978138118, 106768.91978138118, 107163.62171619199, 107201.76900205444, 107430.0620860779, 107026.18839309437, 107329.92320871705, 107329.92320871705, 107329.92320871705, 107101.35460340479, 106765.40137148273, 106983.86911544608, 107014.13106342265, 106916.50406171728, 106916.50406171728, 106916.50406171728, 106752.63775863274, 107013.79418268008, 107647.79863284362, 107741.04851802211, 108226.96886958426, 108226.96886958426, 108226.96886958426, 108133.0345161159, 107525.23706515116, 107572.08344501499, 107575.1213216669, 107171.84719382596, 107171.84719382596, 107171.84719382596, 106964.0800533038, 106840.4494141564, 106534.37996879668, 106664.41729133608, 106615.92308980241, 106615.92308980241, 106615.92308980241, 107106.83483281196, 107054.13843778477, 107313.07535989635, 107292.25214282135, 107648.13881349028, 107648.13881349028, 107648.13881349028, 107537.53747459917, 107402.92184260944, 107717.34183640147, 107778.23760521362, 108263.95577888703, 108263.95577888703, 108263.95577888703, 108203.1696154025, 108414.2097599927, 108475.04183930939, 108639.61884608804, 108422.96113199514, 108422.96113199514, 108422.96113199514, 108643.36813213598, 108182.45442332624, 107798.53266516895, 107862.0812015614, 107590.61713132556, 107590.61713132556, 107590.61713132556, 107383.63301164983, 107536.17849825986, 107619.6025952725, 107453.46604494599, 107418.29535566008, 107418.29535566008, 107418.29535566008, 106992.85880529496, 106966.99401699626, 107135.17739609405, 107020.64760573686, 106459.14373636668, 106459.14373636668, 106459.14373636668, 106680.6781066212, 106441.32182636994, 106984.31112754522, 107021.62770119519, 107063.36274095089, 107063.36274095089, 107063.36274095089, 107190.58511369972, 107013.21533701653, 106665.06964990479, 106972.73965476418, 106890.71748832264, 106890.71748832264, 106890.71748832264, 106812.87734297049, 106493.73423836744, 106707.7605062545, 106719.85515973257, 106976.81614979895, 106976.81614979895, 106976.81614979895, 107348.3250728558, 106849.57028952832, 106865.75535034639, 106885.48310700743, 107014.4014292266, 107014.4014292266, 107014.4014292266, 107052.26143257567, 107259.09027961275, 106962.41281012158, 107085.24469580606, 107225.90012510173, 107225.90012510173, 107225.90012510173, 107382.33178937886, 107861.54462910592, 108115.5279658325, 108331.25735865367, 108293.0525351612, 108293.0525351612, 108293.0525351612, 108673.64384127178, 108805.07233737447, 108621.4338656564, 108571.40864302611, 108606.13939890554, 108606.13939890554, 108606.13939890554, 108344.58651348518, 108751.74915943519, 108484.25125554591, 108348.09495126797, 108469.77103864256, 108469.77103864256, 108469.77103864256, 108789.70101826184, 109010.72103293485, 109021.9650435459, 108872.39452017317, 108907.51026533262, 108907.51026533262, 108907.51026533262, 108916.66890693543, 108372.88773023384, 108488.10471791521, 108668.53787529349, 108648.53746899788, 108648.53746899788, 108648.53746899788, 108760.46025100516, 109048.31709380739, 109287.0383646673, 109459.82706225093, 109325.57567945035, 109325.57567945035, 109325.57567945035, 109030.10060788927, 108889.24054715768, 109088.27813467925, 108604.2957120219, 108484.52518050684, 108484.52518050684, 108484.52518050684, 108212.874955001, 108433.09705832723, 108442.41331221047, 108753.99789066796, 109270.90668411314, 109270.90668411314, 109270.90668411314, 108921.01158697181, 108458.67512124151, 108360.28093523189, 108848.15375052369, 108801.70891089705, 108801.70891089705, 108801.70891089705, 108899.71881388169, 108393.02011227547, 108970.8771980957, 109030.62875529862, 109063.99476820094, 109063.99476820094, 109063.99476820094, 108884.36902461256, 108393.73790187892, 108859.33823876243, 109039.28459180641, 108884.17713300331, 108884.17713300331, 108884.17713300331, 108721.1969422962, 108742.32725776234, 109085.9651296495, 108968.7880454514, 108587.29223534281, 108587.29223534281, 108587.29223534281, 108041.46171134108, 108129.09724285876, 108223.66174319273, 108474.92419512392, 108592.31902504008, 108592.31902504008, 108592.31902504008, 108226.92252341015, 108861.77771308151, 108967.69262208175, 108914.76603656591, 108940.76058573293, 108940.76058573293, 108940.76058573293, 108946.92113793685, 108999.50033058936, 109526.33446917837, 109507.16365823275, 109729.26993565858, 109729.26993565858, 109729.26993565858, 109446.85017933391, 109437.14452338609, 109280.5527383564, 109524.15298571764, 109528.22963255722, 109528.22963255722, 109528.22963255722, 109917.06020207514, 109788.32480156585, 110084.03836735981, 110360.59695501922, 110397.97528719995, 110397.97528719995, 110397.97528719995, 110454.61365648857, 110724.89965679374, 110678.17963979853, 110781.12858072273, 111239.343689078, 111239.343689078, 111239.343689078, 111250.01300493322, 110901.14247107483, 110472.95531536071, 110532.04798059104, 110171.1887635527, 110171.1887635527, 110171.1887635527, 109858.79411718933, 109618.41253954449, 109791.12434249395, 109692.73741222761, 109518.94847795652, 109518.94847795652, 109518.94847795652, 109632.39763942166, 110162.49847979116, 109944.33528548945, 110061.22133416109, 110065.42760644248]
+            /*real_values]*/
 
             const yMin = Math.min(...real_values);
             const yMax = Math.max(...real_values);
             const range = yMax - yMin;
             const padding = range * 0.05; // 5% padding
-            
+
 
             const drawdowns = calculateDrawdown(real_values);
             const real_drawdowns = drawdowns;
-    //~             range: [yMin - padding, yMax + padding]
+            //~             range: [yMin - padding, yMax + padding]
             // Equity curve data
             const equityData = {
                 x: real_dates,
@@ -505,7 +661,7 @@
                 mode: "lines",
                 fill: "tonexty",
                 fillcolor: "rgba(255, 0, 0, 0.2)",
-    //~                 fillcolor: "rgba(178, 34, 34, 0.2)",
+                //~                 fillcolor: "rgba(178, 34, 34, 0.2)",
 
                 line: {
                     color: "#cd5c5c",
