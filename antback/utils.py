@@ -24,19 +24,20 @@ def get_drawdown(prices):
     max_dd_idx = np.argmax(drawdowns)
     max_dd = drawdowns[max_dd_idx]
     peak_at_max_dd = peaks[max_dd_idx]
-    start_idx = np.where(prices == peak_at_max_dd)[0][-1]
+
+    start_idx = np.where(prices[: max_dd_idx + 1] == peak_at_max_dd)[0][-1]
 
     return {"max_dd": max_dd * -1, "index": max_dd_idx, "start": start_idx}
 
 
 def pct_diff(prev, today):
     if prev == 0 or math.isnan(prev):
-        return float('nan')
+        return float("nan")
     return (today - prev) / prev * 100
 
 
 class RollingList:
-    __slots__ = ('_buffer',)
+    __slots__ = ("_buffer",)
     """Maintain a fixed-length list using deque."""
 
     def __init__(self, maxlen):
@@ -52,7 +53,7 @@ class RollingList:
 
 
 class NamedRollingLists:
-    __slots__ = ('_data', '_maxlen')
+    __slots__ = ("_data", "_maxlen")
     """Store multiple RollingLists keyed by name."""
 
     def __init__(self, maxlen=10):
@@ -78,7 +79,7 @@ class NamedRollingLists:
 
 
 class PerTickerRollingStore:
-    __slots__ = ('_store', '_array_size')
+    __slots__ = ("_store", "_array_size")
     """Store multiple named rolling lists per key."""
 
     def __init__(self, array_size=10):
@@ -98,15 +99,16 @@ class PerTickerRollingStore:
         return rolling_list.values() if rolling_list else None
 
     def __repr__(self):
-        return str({
-            key: {
-                name: arr.values() for name, arr in series.items()
-            } for key, series in self._store.items()
-        })
+        return str(
+            {
+                key: {name: arr.values() for name, arr in series.items()}
+                for key, series in self._store.items()
+            }
+        )
 
 
 class RollingArray:
-    __slots__ = ('_buffer',)
+    __slots__ = ("_buffer",)
     """Maintain a fixed-length NumPy array buffer."""
 
     def __init__(self, size):
@@ -121,9 +123,12 @@ class RollingArray:
         """Return current array values."""
         return self._buffer
 
+    # def is_filled(self):
+    # return np.count_nonzero(self._buffer) == size
+
 
 class NamedRollingArrays:
-    __slots__ = ('_buffers', '_buffer_size')
+    __slots__ = ("_buffers", "_buffer_size")
     """Store multiple RollingArrays keyed by name."""
 
     def __init__(self, array_size=10):
@@ -146,7 +151,7 @@ class NamedRollingArrays:
 
 
 class PerTickerNamedRollingArrays:
-    __slots__ = ('_store', '_array_size')
+    __slots__ = ("_store", "_array_size")
     """Store multiple named rolling arrays per key."""
 
     def __init__(self, array_size=10):
@@ -166,16 +171,17 @@ class PerTickerNamedRollingArrays:
         return rolling_array.values() if rolling_array else None
 
     def __repr__(self):
-        return str({
-            key: {
-                name: arr.values() for name, arr in series.items()
-            } for key, series in self._store.items()
-        })
+        return str(
+            {
+                key: {name: arr.values() for name, arr in series.items()}
+                for key, series in self._store.items()
+            }
+        )
 
 
 def pct_dist(prev, today):
     """Return absolute percentage difference between two values."""
-    distance = math.sqrt((prev - today)**2)
+    distance = math.sqrt((prev - today) ** 2)
     try:
         return abs((distance / max(prev, today)) * 100.0)
     except ZeroDivisionError:
@@ -185,8 +191,21 @@ def pct_dist(prev, today):
 class Candle:
     """Represent a candlestick with OHLC values."""
 
-    __slots__ = ("op", "hi", "lo", "cl", "half", "opcldist_prc", "is_white", "is_black", "is_equal",
-                 "is_doji_std", "is_doji_grave", "is_doji_fly", "ibs")
+    __slots__ = (
+        "op",
+        "hi",
+        "lo",
+        "cl",
+        "half",
+        "opcldist_prc",
+        "is_white",
+        "is_black",
+        "is_equal",
+        "is_doji_std",
+        "is_doji_grave",
+        "is_doji_fly",
+        "ibs",
+    )
 
     def __init__(self, op, hi, lo, cl):
         op, hi, lo, cl = float(op), float(hi), float(lo), float(cl)
@@ -291,7 +310,8 @@ def new_wait_n_bars(n):
                 raise AssertionError("Start should be called without bar argument")
             if start_flag:
                 raise ValueError(
-                    "! WARNING: Starting new count while previous count is still active.")
+                    "! WARNING: Starting new count while previous count is still active."
+                )
             start_flag = True
             store.clear()
             prev_bar = None
@@ -300,7 +320,7 @@ def new_wait_n_bars(n):
         if bar is None:
             raise AssertionError("Must provide either bar argument or start=True")
 
-        assert isinstance(bar, (dtm.date, dtm.datetime)), ("bar must be a datetime object")
+        assert isinstance(bar, (dtm.date, dtm.datetime)), "bar must be a datetime object"
 
         if prev_bar is not None:
             assert bar > prev_bar, "New bar must be greater than previous bar"
@@ -361,6 +381,46 @@ def get_monthly_points(df, near_start_day=3, near_end_day=3):
         if count > near_start_day:
             result["near_start"].append(dates[near_start_day])
 
+        if count > near_end_day:
+            result["near_end"].append(dates[-near_end_day])
+
+    return result
+
+
+def get_weekly_points(df, near_start_day=1, near_end_day=1):
+    """
+    Calculate key weekly points with configurable near_start/near_end days.
+
+    Defaults are set to 1 (the 2nd day and 2nd-to-last day) to accommodate
+    shorter weekly periods (5-7 days).
+    """
+    if not isinstance(df.index, pd.DatetimeIndex):
+        raise ValueError("DataFrame must have a DatetimeIndex")
+
+    result = {"start": [], "near_start": [], "mid": [], "near_end": [], "end": []}
+
+    # Group by ISO Year and ISO Week to handle year boundaries correctly
+    grouped = df.groupby([df.index.isocalendar().year, df.index.isocalendar().week])
+
+    for (year, week), group in grouped:
+        dates = group.index.sort_values()
+        count = len(dates)
+
+        if count == 0:
+            continue
+
+        # Standard points
+        result["start"].append(dates[0])
+        result["end"].append(dates[-1])
+        result["mid"].append(dates[count // 2])
+
+        # Configurable points
+        # Note: dates[1] is the 2nd day; dates[-2] is the 2nd to last day
+        if count > near_start_day:
+            result["near_start"].append(dates[near_start_day])
+
+        # We ensure the near_end doesn't overlap simply by checking count size
+        # but logically it usually targets the day before the end.
         if count > near_end_day:
             result["near_end"].append(dates[-near_end_day])
 
@@ -464,7 +524,7 @@ def create_sma_func_p(period):
     def calculate_sma(new_value):
         nonlocal current_sum, last_sma
 
-        if (new_value != new_value):  #  if math.isnan(new_value):
+        if new_value != new_value:  # if math.isnan(new_value):
             return last_sma
 
         if len(data_window) == period:
@@ -589,23 +649,25 @@ def calculate_annual_growth_rate(portfolio):
     Raises:
         ValueError: If inputs are invalid or calculation fails due to logical issues.
     """
-    if not hasattr(portfolio, 'pos_history') or not portfolio.pos_history:
+    if not hasattr(portfolio, "pos_history") or not portfolio.pos_history:
         raise ValueError("Portfolio must have non-empty pos_history")
 
-    if not hasattr(portfolio, 'starting_capital'):
+    if not hasattr(portfolio, "starting_capital"):
         raise ValueError("Portfolio missing starting_capital")
-    if not callable(getattr(portfolio, 'current_value', None)):
+    if not callable(getattr(portfolio, "current_value", None)):
         raise ValueError("Portfolio must have current_value() method")
-    
+
     history_dates = portfolio.pos_history.keys()
     start_date = min(history_dates)
     # end_date = max(history_dates)
     end_date = portfolio.max_date
 
-    if not isinstance(start_date,
-                      (dtm.date, dtm.datetime)) or not isinstance(end_date,
-                                                                  (dtm.date, dtm.datetime)):
-        raise ValueError("Dates in pos_history and max_date must be date or datetime objects")
+    if not isinstance(start_date, (dtm.date, dtm.datetime)) or not isinstance(
+        end_date, (dtm.date, dtm.datetime)
+    ):
+        raise ValueError(
+            "Dates in pos_history and max_date must be date or datetime objects"
+        )
 
     if start_date >= end_date:
         raise ValueError("Start date must be before end date")
@@ -633,7 +695,7 @@ def calculate_annual_growth_rate(portfolio):
 
     # CAGR formula
     growth_factor = end_value / start_value
-    annual_growth_rate = (growth_factor**(1 / total_years) - 1) * 100
+    annual_growth_rate = (growth_factor ** (1 / total_years) - 1) * 100
 
     return annual_growth_rate
 
@@ -643,12 +705,10 @@ def summary(portfolio, show=False):
     if not portfolio.pos_history or not portfolio.trades:
         raise AssertionError("!No position history available or no trades")
 
-    portfolio.verify_consistency()
-
     start_date = min(portfolio.pos_history.keys())
     end_date = portfolio.max_date
     difference = relativedelta(end_date, start_date)
-    months = difference.months + (difference.years * 12)
+    # months = difference.months + (difference.years * 12)
     # years = max(difference.years + (months / 12.0), 1 / 12.0)
 
     end_equity = portfolio.current_value()
@@ -674,8 +734,12 @@ def summary(portfolio, show=False):
 
     summ_list = [
         [
-            "Date Range:",
-            f"{datetime_to_str(start_date)} to {datetime_to_str(end_date)}",
+            "Start date:",
+            f" {datetime_to_str(start_date)}",
+        ],
+        [
+            "End date:",
+            f" {datetime_to_str(end_date)}",
         ],
         ["Total Return (%):", f"{net_profit_prc:+.2f}%"],
         ["Ann. Ret. (%):", f"{calculate_annual_growth_rate(portfolio):.2f}%"],
@@ -689,10 +753,21 @@ def summary(portfolio, show=False):
         ["Number of Trades:", f"{trades_num:,}"],
         ["Fees Rate (%):", f"{portfolio.fees * 100:.2f}%"],
     ]
-    if hasattr(portfolio, 'leverage'):
+
+    if hasattr(portfolio, "leverage"):
         summ_list.append(["Leverage:", f"{portfolio.leverage}"])
-    if hasattr(portfolio, 'single'):
+    if hasattr(portfolio, "single"):
         summ_list.append(["Single Mode Enabled:", f"{portfolio.single}"])
+
+    try:
+        summ_list.extend(
+            [
+                ["Rejected Orders:", f"{len(portfolio.rejections):,}"],
+                ["Already-Held Signals:", f"{portfolio.already_held_count:,}"],
+            ]
+        )
+    except AttributeError:
+        pass
 
     if show:
         pprint(summ_list)
@@ -740,15 +815,18 @@ def find_longest_streaks_vectorized(df: pd.DataFrame, col: str):
     sign = np.sign(df[col])  # 1 for profit, -1 for loss, 0 for breakeven
     sign_groups = (sign != sign.shift()).cumsum()
 
-    streaks = df.groupby(sign_groups).agg(sign_val=(col, lambda x: np.sign(x.iloc[0])),
-                                          length=(col, "size"))
+    streaks = df.groupby(sign_groups).agg(
+        sign_val=(col, lambda x: np.sign(x.iloc[0])), length=(col, "size")
+    )
 
     longest_profit = streaks.loc[streaks["sign_val"] > 0, "length"].max()
     longest_loss = streaks.loc[streaks["sign_val"] < 0, "length"].max()
 
     return [
-        f"Longest profit streak: {int(longest_profit) if pd.notna(longest_profit) else 0}",
-        f"Longest loss streak: {int(longest_loss) if pd.notna(longest_loss) else 0}"
+        f"Longest profit streak: {
+            int(longest_profit) if pd.notna(longest_profit) else 0
+        }",
+        f"Longest loss streak: {int(longest_loss) if pd.notna(longest_loss) else 0}",
     ]
 
 
@@ -769,71 +847,96 @@ def analyze_trades(trades: pd.DataFrame, show: bool = True):
     # Calculate profit factor
     gross_profit = profits.sum() if not profits.empty else 0
     gross_loss = abs(losses.sum()) if not losses.empty else 0
-    profit_factor = gross_profit / gross_loss if gross_loss > 0 else float(
-        'inf') if gross_profit > 0 else 0
+    profit_factor = (
+        gross_profit / gross_loss
+        if gross_loss > 0
+        else float("inf")
+        if gross_profit > 0
+        else 0
+    )
 
     results = [
         f"Avg profit: {profits.mean():.1f}, Avg loss: {losses.mean():.1f}",
-        f"Avg trade duration: {calculate_avg_duration(df['open_date'], df['close_date'])}"
+        f"Avg trade duration: {
+            calculate_avg_duration(
+                df['open_date'],
+                df['close_date'])}",
     ]
 
     # Streaks
     results.extend(find_longest_streaks_vectorized(df, "net_profit"))
 
     # Daily stats
-    daily = df.groupby(df.index).agg(count=("net_profit", "size"), profit=("net_profit", "sum"))
+    daily = df.groupby(df.index).agg(
+        count=("net_profit", "size"), profit=("net_profit", "sum")
+    )
     all_days = pd.date_range(daily.index.min(), daily.index.max(), freq="D")
     trading_days = daily.index.nunique()
     total_days = len(all_days)
-    results.extend([
-        f"Total days: {total_days}, Trading days: {trading_days} ({trading_days / total_days * 100:.0f}%)",
-        f"Max trades/day: {daily['count'].max():.0f}"
-    ])
+    results.extend(
+        [
+            f"Total days: {total_days}<br/>Trading days: {trading_days} ({
+                trading_days / total_days * 100:.0f}%)",
+            f"Max trades/day: {daily['count'].max():.0f}",
+        ]
+    )
 
     # Weekly stats
     full_daily = daily.reindex(all_days, fill_value=0)
     full_daily["week"] = full_daily.index.map(
-        lambda x: f"{x.isocalendar()[0]}_{x.isocalendar()[1]}")
+        lambda x: f"{x.isocalendar()[0]}_{x.isocalendar()[1]}"
+    )
     weekly_counts = full_daily.groupby("week")["count"].sum()
     weekly_clean = remove_outliers(weekly_counts)
-    results.extend([
-        f"Max trades/week: {weekly_counts.max():.0f}", f"Avg trades/week: {weekly_clean.mean():.1f}"
-    ])
+    results.extend(
+        [
+            f"Max trades/week: {weekly_counts.max():.0f}",
+            f"Avg trades/week: {weekly_clean.mean():.1f}",
+        ]
+    )
 
     # Yearly stats
     full_daily["year"] = full_daily.index.year
     yearly_trades = full_daily.groupby("year")["count"].sum()
     yearly_profit = full_daily.groupby("year")["profit"].sum()
-    results.extend([
-        f"Avg trades/year: {yearly_trades.mean():.1f}",
-        f"Avg profit/year: {yearly_profit.mean():.1f}",
-        f"Profit Factor: {profit_factor:.2f}",
-    ])
+    results.extend(
+        [
+            f"Avg trades/year: {yearly_trades.mean():.1f}",
+            f"Avg profit/year: {yearly_profit.mean():.1f}",
+            f"Profit Factor: {profit_factor:.2f}",
+        ]
+    )
 
     # Group stats by position type
-    if 'position_type' in df.columns:
+    if "position_type" in df.columns:
         total = len(df)
-        long_count = (df['position_type'] == 'long').sum()
-        short_count = (df['position_type'] == 'short').sum()
+        long_count = (df["position_type"] == "long").sum()
+        short_count = (df["position_type"] == "short").sum()
         long_pct = (long_count / total) * 100 if total else 0
         short_pct = (short_count / total) * 100 if total else 0
         results.append(f"Long trades: {long_count} ({long_pct:.1f}%)")
         results.append(f"Short trades: {short_count} ({short_pct:.1f}%)")
 
-        grouped = df.groupby('position_type')
+        grouped = df.groupby("position_type")
         for pos_type, group in grouped:
             # Calculate profit factor for each position type
-            pos_profits = group.loc[group['net_profit'] > 0, 'net_profit']
-            pos_losses = group.loc[group['net_profit'] < 0, 'net_profit']
+            pos_profits = group.loc[group["net_profit"] > 0, "net_profit"]
+            pos_losses = group.loc[group["net_profit"] < 0, "net_profit"]
             pos_gross_profit = pos_profits.sum() if not pos_profits.empty else 0
             pos_gross_loss = abs(pos_losses.sum()) if not pos_losses.empty else 0
-            pos_profit_factor = pos_gross_profit / pos_gross_loss if pos_gross_loss > 0 else float(
-                'inf') if pos_gross_profit > 0 else 0
+            pos_profit_factor = (
+                pos_gross_profit / pos_gross_loss
+                if pos_gross_loss > 0
+                else float("inf")
+                if pos_gross_profit > 0
+                else 0
+            )
 
             avg_win = pos_profits.mean()
             avg_loss = pos_losses.mean()
             results.append(
-                f"{pos_type.capitalize()}: PF: {pos_profit_factor:.2f}, Avg win: {avg_win:.2f}, Avg loss: {avg_loss:.2f}"
+                f"{pos_type.capitalize()}: PF: {pos_profit_factor:.2f}, Avg win: {
+                    avg_win:.2f}, Avg loss: {avg_loss:.2f}"
             )
 
     if show:
@@ -841,38 +944,144 @@ def analyze_trades(trades: pd.DataFrame, show: bool = True):
     return pd.DataFrame(results, columns=["Trading Statistics"])
 
 
-def get_year_stats(portfolio):
+def get_year_stats_p(portfolio):
     """Generate yearly statistics."""
     equity_data = portfolio.get_equity()
     cleaned_equity_data = equity_data.drop(["date_obj"], axis=1)
 
     trade_data = portfolio.get_tradelist()
-    trade_data["year"] = trade_data.close_date.apply(lambda x: str(x)[:4]
-                                                     if pd.notna(x) and len(str(x)) >= 4 else None)
+    trade_data["year"] = trade_data.close_date.apply(
+        lambda x: str(x)[:4] if pd.notna(x) and len(str(x)) >= 4 else None
+    )
 
-    yearly_capital_returns = (cleaned_equity_data.capital.groupby(pd.Grouper(
-        freq="YE")).apply(lambda group: pct_diff(group.iloc[0], group.iloc[-1])).round(2))
+    yearly_capital_returns = (
+        cleaned_equity_data.capital.groupby(pd.Grouper(freq="YE"))
+        .apply(lambda group: pct_diff(group.iloc[0], group.iloc[-1]))
+        .round(2)
+    )
 
     year_return_pairs = list(
         zip(
             [str(date_index)[:4] for date_index in yearly_capital_returns.index],
             yearly_capital_returns.values,
-        ))
+        )
+    )
 
     yearly_trade_profits = trade_data.groupby("year").net_profit.sum().to_dict()
 
     combined_yearly_stats = []
     for year_str, capital_return in year_return_pairs:
         trade_profit = yearly_trade_profits.get(year_str, 0)
-        combined_yearly_stats.append([year_str, capital_return, trade_profit])
+        combined_yearly_stats.append([year_str + " ", capital_return, trade_profit])
 
     return pd.DataFrame(combined_yearly_stats, columns=["year", "return", "net_return"])
+
+
+def get_year_stats(portfolio):
+    """
+    Generate statistics. Returns Monthly stats if period < 1 year,
+    otherwise returns Yearly stats.
+    """
+    # 1. Get Equity Data
+    equity_data = portfolio.get_equity()
+    # Ensure index is datetime (crucial for time calculations)
+    equity_data.index = pd.to_datetime(equity_data.index)
+
+    cleaned_equity_data = equity_data.drop(["date_obj"], axis=1, errors="ignore")
+
+    # 2. Determine Duration and Frequency
+    start_date = cleaned_equity_data.index.min()
+    end_date = cleaned_equity_data.index.max()
+    duration_days = (end_date - start_date).days
+
+    if duration_days < 365:
+        freq_setting = "ME"  # Month End
+        date_fmt = "%Y-%m"  # Format: 2023-01
+        col_name = "month"
+    else:
+        freq_setting = "YE"  # Year End
+        date_fmt = "%Y"  # Format: 2023
+        col_name = "year"
+
+    # 3. Calculate Capital Returns (Dynamic Frequency)
+    # Note: Assuming pct_diff is defined elsewhere. If not, use: lambda x, y:
+    # (y - x) / x * 100
+    period_capital_returns = (
+        cleaned_equity_data.capital.groupby(pd.Grouper(freq=freq_setting))
+        .apply(
+            lambda group: pct_diff(group.iloc[0], group.iloc[-1])
+            if len(group) > 0
+            else 0.0
+        )
+        .round(2)
+    )
+
+    # 4. Process Trade Data (Dynamic Formatting)
+    trade_data = portfolio.get_tradelist()
+
+    # Create a label column based on the determined date format
+    trade_data["period_label"] = trade_data.close_date.apply(
+        lambda x: x.strftime(date_fmt) if pd.notna(x) else None
+    )
+
+    period_trade_profits = trade_data.groupby("period_label").net_profit.sum().to_dict()
+
+    # 5. Combine Data
+    period_return_pairs = list(
+        zip(
+            [
+                date_index.strftime(date_fmt)
+                for date_index in period_capital_returns.index
+            ],
+            period_capital_returns.values,
+        )
+    )
+
+    combined_stats = []
+    for date_str, capital_return in period_return_pairs:
+        trade_profit = period_trade_profits.get(date_str, 0)
+        # Retaining the " " from original code, though usually cleaner to remove it
+        combined_stats.append([date_str + " ", capital_return, trade_profit])
+
+    # 6. Return Result
+    return pd.DataFrame(combined_stats, columns=[col_name, "return", "net_return"])
+
+
+def format_spans(value_str):
+    value_str = str(value_str)
+    """Apply color formatting to positive/negative values."""
+    if value_str.startswith("+"):
+        return f'<span class="positive">{value_str}</span>'
+    if value_str.startswith("-"):
+        return f'<span class="negative">{value_str}</span>'
+    return value_str
+
+
+def render_year_table(portfolio, last_n=20):
+    """
+    Render the year/month performance table as HTML, with periods (years or
+    months, as returned by get_year_stats) laid out as columns and the
+    metrics (return, net_return) as rows. Only the most recent `last_n`
+    periods are shown.
+    """
+    year_df = get_year_stats(portfolio).tail(last_n).copy()
+
+    year_df["return"] = year_df["return"].map(format_spans)
+    year_df["net_return"] = year_df["net_return"].astype(int).map(format_spans)
+
+    period_col = year_df.columns[
+        0
+    ]  # "year" or "month", set dynamically by get_year_stats
+    pivoted = year_df.set_index(period_col).T
+    h4 = "<h4>Returns</h4>"
+    return h4 + pivoted.to_html(classes=["pure-table-right"], escape=False, border=0)
 
 
 def html_report(portfolio, outfile="portfolio-report.html", title="Account report"):
     import json
     import os
     import sys
+
     """Generate HTML report of portfolio performance and trades."""
     try:
         import df2tables as df2t
@@ -884,8 +1093,8 @@ def html_report(portfolio, outfile="portfolio-report.html", title="Account repor
         return
 
     def to_js_timestamps(dt_index):
-        """Convert DatetimeIndex to JavaScript timestamps."""
-        return (dt_index.astype("int64") // 10**6).tolist()
+        """Convert DatetimeIndex to JavaScript timestamps (milliseconds since Unix epoch)."""
+        return dt_index.astype("datetime64[ms]").astype("int64").tolist()
 
     def open_file(filename):
         import subprocess
@@ -898,21 +1107,13 @@ def html_report(portfolio, outfile="portfolio-report.html", title="Account repor
 
     # Generate basic metrics
 
-    def format_spans(value_str):
-        """Apply color formatting to positive/negative values."""
-        if value_str.startswith("+"):
-            return f'<span class="positive">{value_str}</span>'
-        if value_str.startswith("-"):
-            return f'<span class="negative">{value_str}</span>'
-        return value_str
-
     base_stats = portfolio.basic_report(show=False)
 
     base_stats_fmt = []
     for metric, val in base_stats:
         val = format_spans(str(val))
-        if 'fees' in metric.lower():
-            if pd.to_numeric(val.replace('%', '').replace(',', '')) == 0:
+        if "fees" in metric.lower():
+            if pd.to_numeric(val.replace("%", "").replace(",", "")) == 0:
                 val = '<span class="negative">0.0</span> '
         base_stats_fmt.append((metric, val))
 
@@ -920,7 +1121,9 @@ def html_report(portfolio, outfile="portfolio-report.html", title="Account repor
     # CSS class for tables
     pure_table = "pure-table"
 
-    trade_stats = portfolio.stats_trades().to_html(classes=[pure_table], index=False, border=0)
+    trade_stats = portfolio.stats_trades().to_html(
+        classes=[pure_table], index=False, border=0, escape=False
+    )
     # Prepare trades data
     trades_df = portfolio.get_tradelist()
     trades_df["open_date"] = trades_df["open_date"].map(datetime_to_str)
@@ -929,64 +1132,59 @@ def html_report(portfolio, outfile="portfolio-report.html", title="Account repor
     # Prepare chart data
     equity_data = portfolio.get_equity().capital
     chart_x = to_js_timestamps(equity_data.index)
-    chart_y = equity_data.values.tolist()
+    chart_y = equity_data.round(3).values.tolist()
 
-    scroll_cfg = {
+    custom_config_opts = {
         "paging": True,
-        "pageLength" : 30,
-        "scrollCollapse": False,
-        # "scrollY": '50vh', # slow for large tables
-        "scrollX": "90vw"
+        "pageLength": 50,
+        "fixedColumns": {"start": 1},
+        "scrollX": True,
     }
     # Generate trades table
-    
     try:
         trades_table = df2t.render_inline(
             trades_df,
-            load_column_control=True,
-            num_html=["net_profit", "profit_pct", "gross_profit"],
-            js_opts=scroll_cfg
+            format_negatives=["net_profit", "profit_pct", "gross_profit"],
+            js_opts=custom_config_opts,
         )
     except TypeError:
-        print('Upgrade df2tables to recent version!')
+        print("Upgrade df2tables to recent version!")
         trades_table = df2t.render_inline(
             trades_df,
-            load_column_control=True,
-            num_html=["net_profit", "profit_pct", "gross_profit"],
+            format_negatives=["net_profit", "profit_pct", "gross_profit"],
         )
-        
 
     # Template data
     data = {
-        "basic_report":
-            metrics_df.reset_index(drop=True).to_html(
-                index=False,
-                border=0,
-                classes=[pure_table],
-                escape=False,
-            ).replace("<table ", '<table style="float:left;margin-right:2rem;max-width:22rem;" '),
-        "trades":
-            trades_table,
-        "trades_stats":
-            trade_stats,
-        "real_dates":
-            json.dumps(chart_x),
-        "real_values":
-            json.dumps(chart_y),
-        "report_title":
-            title,
-        "generate_jsdata":
-            "// generate_jsdata function",
+        "basic_report": metrics_df.reset_index(drop=True)
+        .to_html(
+            index=False,
+            border=0,
+            classes=[pure_table],
+            escape=False,
+        )
+        .replace("<table ", '<table style="" '),
+        "trades": trades_table,
+        "trades_stats": trade_stats,
+        "real_dates": json.dumps(chart_x),
+        "real_values": json.dumps(chart_y),
+        "report_title": title,
+        "generate_jsdata": "// generate_jsdata function",
     }
+
+    data["years_tbl"] = render_year_table(portfolio)
 
     template_file = "antreport_templ.htm"
     try:
         # Python 3.9+
         from importlib import resources
+
         template_path = str(resources.files("antback").joinpath(template_file))
     except (ImportError, AttributeError):
         # Fallback for older versions
-        template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), template_file)
+        template_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), template_file
+        )
 
     write_from_template(template_path, outfile, data)
     open_file(outfile)
@@ -1004,7 +1202,9 @@ def excel_report(portfolio, outfile="portfolio-report.xlsx", title="Porfolio rep
         portfolio.basic_report()
         return
     excel_file = xl.Exfile(outfile)
-    excel_file.write(portfolio.basic_report(show=False), title=title, worksheet_name="Basic")
+    excel_file.write(
+        portfolio.basic_report(show=False), title=title, worksheet_name="Basic"
+    )
     excel_file.write(
         get_year_stats(portfolio).reset_index(drop=True),
         title="Yearly Performance",
@@ -1016,13 +1216,17 @@ def excel_report(portfolio, outfile="portfolio-report.xlsx", title="Porfolio rep
     trades_df["close_date"] = trades_df["close_date"].map(datetime_to_str)
     excel_file.write(trades_df, title="Trade List", worksheet_name="Trades")
 
-    excel_file.write(portfolio.get_equity(), title="Equity Curve", worksheet_name="Equity")
+    excel_file.write(
+        portfolio.get_equity(), title="Equity Curve", worksheet_name="Equity"
+    )
 
-    excel_file.write(portfolio.stats_trades(), title="Trade Statistics", worksheet_name="Stats")
+    excel_file.write(
+        portfolio.stats_trades(), title="Trade Statistics", worksheet_name="Stats"
+    )
 
     excel_file.add_links()
     excel_file.save(start=True)
 
 
 if __name__ == "__main__":
-    print(datetime_to_str('None'))
+    print(datetime_to_str("None"))

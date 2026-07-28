@@ -68,7 +68,8 @@ def trade_result(trade, brokerage, opened=False):
         # Short CFD: profit when price goes down
         cover_cost = trade.close_price * trade.quantity
         gross_profit = position_size - cover_cost
-        profit_pct = pct_diff(trade.close_price, trade.open_price)
+        # FIXED: short profit relative to entry, correctly signed
+        profit_pct = -pct_diff(trade.open_price, trade.close_price)
 
     # In CFD/FX, fees are typically spread-based or commission per trade
     buy_fees = position_size * brokerage
@@ -113,6 +114,7 @@ class CFDAccount:
         "pos_history",
         "events",
         "total_fees_paid",
+        "liquidation_shortfall",
         "allow_fractional",
     )
 
@@ -137,7 +139,8 @@ class CFDAccount:
             margin_requirement: Required margin as fraction (0.1 = 10%)
             leverage: Maximum leverage ratio
             fees: Fee rate (default 0.00015 = 1.5 bps)
-            margin_call_level: Margin call triggered when equity falls below this * required_margin
+            margin_call_level: Margin call triggered when equity falls below 
+                this * current required margin (marked to market)
         """
         self.warn = warn
         assert cash >= 1000, "Minimum cash requirement: 1,000 for CFD/FX"
@@ -158,6 +161,7 @@ class CFDAccount:
         self.pos_history = {}
         self.events = defaultdict(list)
         self.total_fees_paid = 0.0
+        self.liquidation_shortfall = 0.0
         self.allow_fractional = allow_fractional
 
     def _validate_and_update_date(self, date_obj):
@@ -197,26 +201,35 @@ class CFDAccount:
         return unrealized_pnl
 
     def check_margin_call(self):
+        """Maintenance-margin model, marked to market.
+
+        Margin call triggers when total equity falls below the maintenance
+        margin: margin_call_level * (current notional * margin_requirement).
+        Always returns a (triggered, equity, threshold) tuple.
+        """
         if not self.position:
-            return False
+            return False, self.cash, 0.0
 
-        unrealized_pnl = self.calculate_unrealized_pnl()
+        _, quantity, _, _, current_price, _ = self.position
 
-        # FIXED: Use total equity (cash + unrealized_pnl) instead of available_cash
-        total_equity = self.cash + unrealized_pnl
-        required_margin = self.blocked_margin
+        total_equity = self.cash + self.calculate_unrealized_pnl()
 
-        # Margin call when equity falls below margin call level
-        margin_call_threshold = required_margin * self.margin_call_level
+        # Maintenance margin on the CURRENT notional, not the entry-time
+        # blocked margin (which never moves as the market moves).
+        current_required = current_price * quantity * self.margin_requirement
+        maintenance_margin = current_required * self.margin_call_level
 
-        if total_equity < margin_call_threshold:
-            return True, total_equity, margin_call_threshold
-        return False, total_equity, margin_call_threshold
+        return total_equity < maintenance_margin, total_equity, maintenance_margin
 
     def _open_position(self, ticker, date_obj, price, fixed_val, position_type):
         """Open a CFD/FX position with margin requirements."""
         if self.position is not None:
-            opened_position_type = self.position[-1]
+            open_ticker, opened_position_type = self.position[0], self.position[-1]
+            if open_ticker != ticker:
+                raise Exception(
+                    f"CFDAccount holds a single global position; already have "
+                    f"{opened_position_type} {open_ticker} open. Close it before opening {ticker}."
+                )
             if opened_position_type == position_type:
                 if self.warn:
                     print(f"- Already have position in {self.position[0]}.")
@@ -227,26 +240,40 @@ class CFDAccount:
                 )
 
         date_obj = self._validate_and_update_date(date_obj)
+
+        # Ruined-account guard: no new positions once equity is exhausted
+        if self.current_value() <= 0:
+            msg = (f"Account liquidated: equity {self.current_value():.2f} <= 0, "
+                   f"refusing {position_type} {ticker}")
+            self.events[date_obj].append(msg)
+            if self.warn:
+                print(msg)
+            return None
+
         # Calculate position size
+        # Max position affordable when factoring in BOTH margin requirement and entry fees.
+        # Applies to fixed_val too now - previously only the leverage-sized branch was
+        # protected, so a fixed_val bigger than available cash would open with no error.
+        max_affordable_pos = (
+            self.available_cash() / (self.margin_requirement + self.fees)
+        ) * 0.99999
+
         if fixed_val:
-            assert fixed_val >= self.MIN_AMOUNT, f"""fixed_val amount must be >= {
-                self.MIN_AMOUNT
-            }"""
+            assert fixed_val >= self.MIN_AMOUNT, f"fixed_val amount must be >= {self.MIN_AMOUNT}"
+            if fixed_val > max_affordable_pos:
+                msg = (
+                    f"Insufficient margin: fixed_val {fixed_val:.2f} exceeds affordable "
+                    f"{max_affordable_pos:.2f} given available cash {self.available_cash():.2f}"
+                )
+                self.events[date_obj].append(msg)
+                raise ValueError(msg)
             position_value = fixed_val
         else:
-            # Use available cash with leverage
-            max_position_value = self.available_cash() * self.leverage
+            # Max position allowed strictly by the broker's leverage limit
+            max_leverage_pos = self.available_cash() * self.leverage
+            # Use whichever constraint is stricter
+            max_position_value = min(max_leverage_pos, max_affordable_pos)
             position_value = max_position_value * self.DEFAULT_PERCENT
-
-        # Calculate required margin
-        required_margin = position_value * self.margin_requirement
-
-        if self.available_cash() < required_margin:
-            msg = f"""Insufficient margin: available {
-                self.available_cash():.1f
-            } < required {required_margin:.1f}"""
-            self.events[date_obj].append(msg)
-            raise ValueError(msg)
 
         # Calculate quantity
         buffer_factor = 0.99999
@@ -283,16 +310,16 @@ class CFDAccount:
         self.events[date_obj].append(action_msg)
 
         if self.warn:
-            print(
-                f"""Opened {position_type} position: {quantity:.4f} {ticker} at {
-                    price:.2f
-                }"""
+            message = (
+                f"Opened {position_type} position: {quantity:.4f} {ticker} "
+                f"at {price:.2f}"
             )
-            print(
-                f"""Position value: {actual_position_value:.2f}, Required margin: {
-                    actual_required_margin:.2f
-                }"""
+            print(message)
+            message = (
+                f"Position value: {actual_position_value:.2f}, "
+                f"Required margin: {actual_required_margin:.2f}"
             )
+            print(message)
             print(f"Available cash: {self.available_cash():.2f}")
 
         self.save_position(date_obj)
@@ -324,6 +351,17 @@ class CFDAccount:
         self.blocked_margin = 0.0
         self.cash += net_pnl
 
+        # Negative-balance protection: a gap-through liquidation cannot push
+        # the account below zero (losses limited to deposited equity).
+        if self.cash < 0:
+            shortfall = -self.cash
+            self.cash = 0.0
+            self.liquidation_shortfall += shortfall
+            self.events[date_obj].append(
+                f"LIQUIDATION: losses exceeded deposit by {shortfall:.2f}; "
+                f"equity floored at 0"
+            )
+
         self.total_fees_paid += closing_fees
 
         self.trades.append(
@@ -347,16 +385,15 @@ class CFDAccount:
         )
 
         if self.warn:
-            print(
-                f"""Closed {position_type} position: {quantity:.4f} {ticker} at {
-                    price:.2f
-                }"""
+            message = (
+                f"Closed {position_type} position: {quantity:.4f} {ticker} "
+                f"at {price:.2f}"
             )
+            print(message)
             print(f"Gross P&L: {gross_pnl:.2f}, Net P&L: {net_pnl:.2f}")
             print(
-                f"""Released margin: {released_margin:.2f}, Available cash: {
-                    self.available_cash():.2f
-                }"""
+                f"Released margin: {released_margin:.2f}, "
+                f"Available cash: {self.available_cash():.2f}"
             )
 
         self.position = None
@@ -378,7 +415,7 @@ class CFDAccount:
                 self.events[date_obj].append(msg)
                 if self.warn:
                     print(f"!  {msg}")
-
+                self._close(date_obj, price, log_msg="Margin Call")
             self.save_position(date_obj)
 
     def process(self, signal, ticker, date_obj, price, fixed_val=None, log_msg=""):
@@ -460,16 +497,16 @@ class CFDAccount:
         total_equity = self.cash + unrealized_pnl
 
         if self.warn and self.position:
-            print(
-                f"""Total Cash: {self.cash:.2f}, Blocked Margin: {
-                    self.blocked_margin:.2f
-                }"""
+            message = (
+                f"Total Cash: {self.cash:.2f}, "
+                f"Blocked Margin: {self.blocked_margin:.2f}"
             )
-            print(
-                f"""Unrealized P&L: {unrealized_pnl:.2f}, Total Equity: {
-                    total_equity:.2f
-                }"""
+            print(message)
+            message = (
+                f"Unrealized P&L: {unrealized_pnl:.2f}, "
+                f"Total Equity: {total_equity:.2f}"
             )
+            print(message)
 
         return total_equity
 
@@ -485,10 +522,16 @@ class CFDAccount:
         all_trades = closed_trades + open_trades
         if all_trades:
             df = pd.DataFrame(all_trades, columns=TradeResult._fields)
+            # NOTE: was df["log_msg"].eq("open") - but trade_result() overwrites log_msg
+            # to "*opened" for the open row (see trade_result, opened=True branch), so
+            # that comparison never matched anything. Track source list membership instead.
+            df["is_open"] = [False] * len(closed_trades) + [True] * len(open_trades)
             df = df.sort_values("close_date").reset_index(drop=True)
             return df
         else:
-            return pd.DataFrame(columns=TradeResult._fields)
+            df = pd.DataFrame(columns=TradeResult._fields)
+            df["is_open"] = pd.Series(dtype=bool)
+            return df
 
     def margin_utilization(self):
         """Calculate margin utilization percentage."""
@@ -511,8 +554,8 @@ class CFDAccount:
             position_value = current_price * quantity
 
             print(
-                f"""Position: {position_type.upper()} {quantity:.4f} {ticker} 
-                {current_price:.2f}"""
+                f"Position: {position_type.upper()} {quantity:.4f} {ticker} "
+                f"{current_price:.2f}"
             )
             print(f"Position Value: {position_value:.2f}, Entry: {entry_price:.2f}")
             print(f"Unrealized P&L: {unrealized_pnl:.2f}")
@@ -529,6 +572,8 @@ class CFDAccount:
         print(f"Margin Utilization: {self.margin_utilization():.1f}%")
         print(f"Leverage Available: {self.leverage}x")
         print(f"Total Fees Paid: {self.total_fees_paid:.2f}")
+        if self.liquidation_shortfall:
+            print(f"Liquidation Shortfall: {self.liquidation_shortfall:.2f}")
         print(
             f"Return: {((self.current_value() / self.starting_capital - 1) * 100):.2f}%"
         )
@@ -616,6 +661,11 @@ class CFDAccount:
                 # Only entry fees for open position
                 fees = entry_price * quantity * self.fees
                 open_positions_profit = gross_profit - fees
+
+        reconciled = self.starting_capital + net_trading_profit + open_positions_profit
+        if abs(reconciled - current_total) > 0.01:
+            print(f"WARNING: reconciliation mismatch: {reconciled:.2f} vs {current_total:.2f}")
+            return False
 
         if self.warn:
             print("Capital verification:")
@@ -741,15 +791,14 @@ def gen_equity(portfolio, show=False):
                     else (entry - current) * qty
                 )
                 print(
-                    f"""{date}: entry={entry:.4f}, current={current:.4f}, unrealized_pnl={
-                        unrealized:.2f
-                    }, capital={cap:.2f}"""
+                    f"{date}: entry={entry:.4f}, current={current:.4f}, "
+                    f"unrealized_pnl={unrealized:.2f}, capital={cap:.2f}"
                 )
             else:
                 print(f"{date}: No position, capital={cap:.2f}")
 
-    # Convert events dict
-    portfolio.events = dict(portfolio.events)
+    # FIXED: Convert events dict to local copy (does not permanently mutate portfolio state)
+    events = dict(portfolio.events)
 
     # Create DataFrame with CFD-specific columns
     mdf = pd.DataFrame(
@@ -763,20 +812,13 @@ def gen_equity(portfolio, show=False):
         ],
     )
 
-    # Add events information
-    try:
-        # Assuming utils module has datetime_to_str function
-        events_dict = {utils.datetime_to_str(k): v for k, v in portfolio.events.items()}
-        mdf_py_dates = [utils.datetime_to_str(x) for x in mdf.date_obj.values]
-        mdf["events"] = [str(events_dict.get(x, "")) for x in mdf_py_dates]
-    except (NameError, AttributeError):
-        # Fallback if utils module not available
-        events_dict = {str(k): v for k, v in portfolio.events.items()}
-        mdf_py_dates = [str(x) for x in mdf.date_obj.values]
-        mdf["events"] = [str(events_dict.get(x, "")) for x in mdf_py_dates]
+    # Add events information leveraging Pandas native vectorization
+    # We map directly on the native datetime objects instead of casting to strings
+    events_series = pd.Series({k: str(v) for k, v in events.items()}, dtype=object)
+    mdf["events"] = mdf["date_obj"].map(events_series).fillna("")
 
     # Convert to date for grouping
-    mdf["pydate"] = mdf.date_obj.map(lambda x: pd.to_datetime(x).date())
+    mdf["pydate"] = pd.to_datetime(mdf["date_obj"]).dt.date
 
     # Group by day and take last values
     gdf = mdf.groupby(["pydate"]).agg(
@@ -1036,7 +1078,21 @@ def comprehensive_test():
     return portfolio, stock_data
 
 
+def test_negative():
+    acc = CFDAccount(cash=10000, leverage=10, warn=True)
+    acc.process('long', 'XYZ', pd.to_datetime("2024-01-04"), 100.0)
+    acc.process(None, 'XYZ', pd.to_datetime("2024-01-06"), 5.0)      # -95% gap
+    # Gap-through liquidation: equity floored at zero, shortfall recorded
+    assert acc.position is None                     # force-closed by margin call
+    assert acc.current_value() == 0.0               # was -85,014.05 before fix
+    assert acc.liquidation_shortfall > 0
+    # ruined account refuses new positions instead of trading on negative cash
+    assert acc.process('long', 'XYZ', pd.to_datetime("2024-01-07"), 6.0) is None
+    print(acc.events)
+
+
 if __name__ == "__main__":
+    test_negative()
     # Run simple test
     # simple_portfolio = simple_test()
     # Run comprehensive test
