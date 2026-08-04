@@ -702,11 +702,51 @@ def calculate_annual_growth_rate(portfolio):
 
 def summary(portfolio, show=False):
     """Generate portfolio summary statistics."""
-    if not portfolio.pos_history or not portfolio.trades:
-        raise AssertionError("!No position history available or no trades")
+    # ── Guard: no position history at all ───────────────────────────────
+    if not portfolio.pos_history:
+        msg = "No position history available — did you call process()?"
+        if show:
+            print(msg)
+        raise ValueError(msg)
 
+    # ── Show rejected orders (if any) ───────────────────────────────────
+    rejected = getattr(portfolio, "rejections", [])
+    if rejected:
+        print(f"\n!  {len(rejected)} rejected order(s):")
+        if len(rejected) <= 20:
+            for r in rejected:
+                print(f"   {r.date}  {r.action:>4}  {r.ticker:>6}  reason={r.reason}")
+        else:
+            for r in rejected[:10]:
+                print(f"   {r.date}  {r.action:>4}  {r.ticker:>6}  reason={r.reason}")
+            print(f"   ... ({len(rejected) - 15} more) ...")
+            for r in rejected[-5:]:
+                print(f"   {r.date}  {r.action:>4}  {r.ticker:>6}  reason={r.reason}")
+
+        # Group by reason
+        from collections import Counter
+
+        reason_counts = Counter(r.reason for r in rejected)
+        print("   By reason:", dict(reason_counts))
+        print()
+
+    # ── Guard: zero trades ──────────────────────────────────────────────
+    if not portfolio.trades:
+        print("No trades executed (no closed positions).")
+        if portfolio.positions:
+            print(f"Currently holding: {list(portfolio.positions.keys())}")
+        if show:
+            end_equity = portfolio.current_value()
+            net_profit_prc = pct_diff(portfolio.starting_capital, end_equity)
+            print(f"Starting Capital:  {portfolio.starting_capital:,.2f}")
+            print(f"Current Value:    {end_equity:,.2f}")
+            print(f"Unrealized P&L:   {net_profit_prc:+.2f}%")
+        return None
+
+    # ── Normal summary path (unchanged from here down) ──────────────────
     start_date = min(portfolio.pos_history.keys())
     end_date = portfolio.max_date
+
     difference = relativedelta(end_date, start_date)
     # months = difference.months + (difference.years * 12)
     # years = max(difference.years + (months / 12.0), 1 / 12.0)
@@ -734,13 +774,17 @@ def summary(portfolio, show=False):
 
     summ_list = [
         [
-            "Start date:",
-            f" {datetime_to_str(start_date)}",
+            "Date range:",
+            f" {datetime_to_str(start_date)} : {datetime_to_str(end_date)}",
         ],
-        [
-            "End date:",
-            f" {datetime_to_str(end_date)}",
-        ],
+        # [
+        # "Start date:",
+        # f" {datetime_to_str(start_date)}",
+        # ],
+        # [
+        # "End date:",
+        # f" {datetime_to_str(end_date)}",
+        # ],
         ["Total Return (%):", f"{net_profit_prc:+.2f}%"],
         ["Ann. Ret. (%):", f"{calculate_annual_growth_rate(portfolio):.2f}%"],
         ["Max Drawdown:", f"{drawdown_val:.1f}%"],
@@ -763,7 +807,6 @@ def summary(portfolio, show=False):
         summ_list.extend(
             [
                 ["Rejected Orders:", f"{len(portfolio.rejections):,}"],
-                ["Already-Held Signals:", f"{portfolio.already_held_count:,}"],
             ]
         )
     except AttributeError:
@@ -855,17 +898,6 @@ def analyze_trades(trades: pd.DataFrame, show: bool = True):
         else 0
     )
 
-    results = [
-        f"Avg profit: {profits.mean():.1f}, Avg loss: {losses.mean():.1f}",
-        f"Avg trade duration: {
-            calculate_avg_duration(
-                df['open_date'],
-                df['close_date'])}",
-    ]
-
-    # Streaks
-    results.extend(find_longest_streaks_vectorized(df, "net_profit"))
-
     # Daily stats
     daily = df.groupby(df.index).agg(
         count=("net_profit", "size"), profit=("net_profit", "sum")
@@ -873,13 +905,23 @@ def analyze_trades(trades: pd.DataFrame, show: bool = True):
     all_days = pd.date_range(daily.index.min(), daily.index.max(), freq="D")
     trading_days = daily.index.nunique()
     total_days = len(all_days)
+
+    results = [
+        f"Total days: {total_days}<br/>Trading days: {trading_days} ({
+            trading_days / total_days * 100:.0f}%)",
+    ]
+
     results.extend(
         [
-            f"Total days: {total_days}<br/>Trading days: {trading_days} ({
-                trading_days / total_days * 100:.0f}%)",
-            f"Max trades/day: {daily['count'].max():.0f}",
+            f"Avg profit: {profits.mean():.1f}<br/> Avg loss: {losses.mean():.1f}",
+            f"Avg trade duration: {
+                calculate_avg_duration(df['open_date'], df['close_date'])
+            }",
         ]
     )
+
+    # Streaks
+    results.extend(find_longest_streaks_vectorized(df, "net_profit"))
 
     # Weekly stats
     full_daily = daily.reindex(all_days, fill_value=0)
@@ -890,6 +932,7 @@ def analyze_trades(trades: pd.DataFrame, show: bool = True):
     weekly_clean = remove_outliers(weekly_counts)
     results.extend(
         [
+            f"Max trades/day: {daily['count'].max():.0f}",
             f"Max trades/week: {weekly_counts.max():.0f}",
             f"Avg trades/week: {weekly_clean.mean():.1f}",
         ]
@@ -1009,9 +1052,9 @@ def get_year_stats(portfolio):
     period_capital_returns = (
         cleaned_equity_data.capital.groupby(pd.Grouper(freq=freq_setting))
         .apply(
-            lambda group: pct_diff(group.iloc[0], group.iloc[-1])
-            if len(group) > 0
-            else 0.0
+            lambda group: (
+                pct_diff(group.iloc[0], group.iloc[-1]) if len(group) > 0 else 0.0
+            )
         )
         .round(2)
     )
@@ -1110,11 +1153,15 @@ def html_report(portfolio, outfile="portfolio-report.html", title="Account repor
     base_stats = portfolio.basic_report(show=False)
 
     base_stats_fmt = []
+    dates_sep = " : "
     for metric, val in base_stats:
+        if dates_sep in val:
+            val = val.replace(dates_sep, "<br/>")
         val = format_spans(str(val))
         if "fees" in metric.lower():
             if pd.to_numeric(val.replace("%", "").replace(",", "")) == 0:
                 val = '<span class="negative">0.0</span> '
+
         base_stats_fmt.append((metric, val))
 
     metrics_df = pd.DataFrame(base_stats_fmt, columns=["Metric", "Value"])
@@ -1136,7 +1183,7 @@ def html_report(portfolio, outfile="portfolio-report.html", title="Account repor
 
     custom_config_opts = {
         "paging": True,
-        "pageLength": 50,
+        "pageLength": 10,
         "fixedColumns": {"start": 1},
         "scrollX": True,
     }
@@ -1190,7 +1237,7 @@ def html_report(portfolio, outfile="portfolio-report.html", title="Account repor
     open_file(outfile)
 
 
-def excel_report(portfolio, outfile="portfolio-report.xlsx", title="Porfolio report"):
+def excel_report(portfolio, outfile="portfolio-report.xlsx", title="Portfolio report"):
     """Generate Excel report of portfolio."""
 
     try:
@@ -1228,5 +1275,14 @@ def excel_report(portfolio, outfile="portfolio-report.xlsx", title="Porfolio rep
     excel_file.save(start=True)
 
 
+def test_drawdown_zero_value():
+    prices = np.array([100, 120, 60, 0])
+    result = get_drawdown(prices)
+    print(result)
+    assert result["max_dd"] == -100
+    assert result["index"] == 3
+
+
 if __name__ == "__main__":
     print(datetime_to_str("None"))
+    test_drawdown_zero_value()

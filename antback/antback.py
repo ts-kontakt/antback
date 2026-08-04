@@ -13,13 +13,6 @@ try:
 except ImportError:
     import utils
 
-
-def pct_diff(prev, today):
-    if prev == 0:
-        return float("nan")
-    return (today - prev) / prev * 100
-
-
 TradeData = namedtuple(
     "TradeData",
     ["ticker", "open_date", "buy_price", "close_date", "sell_price", "quantity", "log_msg", ],
@@ -35,16 +28,17 @@ TradeResult = namedtuple("TradeResult", [
 ALREADY_HELD = "already_held"
 ZERO_QUANTITY = "zero_quantity"
 DUST_QUANTITY = "dust_quantity"
+INSUFFICIENT_CASH = "insufficient_cash"
 NOT_HELD = "not_held"
 
 RejectedOrder = namedtuple("RejectedOrder", ["ticker", "date", "action", "reason"])
 
-
 def trade_result(trade, brokerage, opened=False):
-    """Calculate trade results including comissions."""
+    """Calculate trade results including commissions."""
     position_size = trade.buy_price * trade.quantity
     sell_value = trade.sell_price * trade.quantity
     buy_fees = position_size * brokerage
+
     if not opened:
         sell_fees = sell_value * brokerage
         total_fees = buy_fees + sell_fees
@@ -52,33 +46,39 @@ def trade_result(trade, brokerage, opened=False):
         sell_fees = 0
         total_fees = buy_fees
 
-    profit_pct = pct_diff(trade.buy_price, trade.sell_price)
     gross_profit = sell_value - position_size
     net_profit = gross_profit - total_fees
 
+    # ── Net return on total capital deployed (includes buy-side commission) ──
+    cost_basis = position_size + buy_fees
+    profit_pct = (net_profit / cost_basis) * 100 if cost_basis != 0 else float("nan")
+
     log_msg = "*opened" if opened else trade.log_msg
 
-    return TradeResult(ticker=trade.ticker,
-                       open_date=trade.open_date,
-                       close_date=trade.close_date,
-                       buy_price=trade.buy_price,
-                       sell_price=trade.sell_price,
-                       quantity=trade.quantity,
-                       position_size=position_size,
-                       net_profit=net_profit,
-                       profit_pct=profit_pct,
-                       gross_profit=gross_profit,
-                       buy_fees=buy_fees,
-                       sell_fees=sell_fees,
-                       total_fees=total_fees,
-                       log_msg=log_msg,
-                       )
+    return TradeResult(
+        ticker=trade.ticker,
+        open_date=trade.open_date,
+        close_date=trade.close_date,
+        buy_price=trade.buy_price,
+        sell_price=trade.sell_price,
+        quantity=trade.quantity,
+        position_size=position_size,
+        net_profit=net_profit,
+        profit_pct=profit_pct,
+        gross_profit=gross_profit,
+        buy_fees=buy_fees,
+        sell_fees=sell_fees,
+        total_fees=total_fees,
+        log_msg=log_msg,
+    )
+
+
 
 
 class Portfolio:
     __slots__ = ("warn", "starting_capital", "cash", "positions", "fees", "max_date", "trades",
                  "pos_history", "single", "events", "total_fees_paid", "allow_fractional",
-                 "rejections", "already_held_count", "not_held_count",
+                 "rejections", "not_held_count",
                  )
     """Trading portfolio management class."""
     DEFAULT_PERCENT = 1.0
@@ -99,7 +99,6 @@ class Portfolio:
         self.total_fees_paid = 0.0
         self.allow_fractional = allow_fractional
         self.rejections = []
-        self.already_held_count = 0
         self.not_held_count = 0
 
     def _validate_and_update_date(self, date_obj):
@@ -109,7 +108,7 @@ class Portfolio:
             raise ValueError("'date' or 'datetime' allowed. Convert using pd.to_datetime()")
 
         if self.max_date and date_obj < self.max_date:
-            print(f"! Recived date: {date_obj}, self.max_date: {self.max_date}")
+            print(f"! Received date: {date_obj}, self.max_date: {self.max_date}")
             raise ValueError("Date not in chronological order")
 
         if self.max_date is None or date_obj > self.max_date:
@@ -132,12 +131,11 @@ class Portfolio:
             raise Exception(f"Single mode - can't add new ticker: {ticker}")
 
         if ticker in self.positions:
-            self.already_held_count += 1
             if self.warn:
                 print(f"! Re-buying not allowed: {ticker} {date_obj}")
             return ALREADY_HELD
 
-        if fixed_val:
+        if fixed_val is not None:
             # assert price < fixed_val, f"fixed_val {fixed_val}  must be >= price {price} "
             if price > fixed_val:
                 print(f"!warning: price {price}  >= fixed_val {fixed_val}")
@@ -147,6 +145,7 @@ class Portfolio:
             if self.cash < fixed_val:
                 msg = f"{date_obj} - Insufficient cash: {self.cash:.1f} < {fixed_val}"
                 self.events[date_obj].append(msg)
+                self.rejections.append(RejectedOrder(ticker, date_obj, "buy", INSUFFICIENT_CASH))
                 raise ValueError(msg)
             available_investment = fixed_val
         else:
@@ -182,6 +181,7 @@ class Portfolio:
         if self.cash < total_cost:
             msg = f"Calculation error: cash {self.cash:.5f} < needed {total_cost:.5f}"
             self.events[date_obj].append(msg)
+            self.rejections.append(RejectedOrder(ticker, date_obj, "buy", INSUFFICIENT_CASH))
             raise ValueError(msg)
 
         self.cash -= total_cost
@@ -228,19 +228,6 @@ class Portfolio:
         if self.warn:
             print(f"""Sold {quantity:.4f} shares of {ticker} at {price:.2f},
                  net proceeds: {net_proceeds:.2f}""")
-
-        self.save_positions(date_obj)
-
-    def update_prev(self, ticker, date_obj, price):
-        """Update price for existing position."""
-        date_obj = self._validate_and_update_date(date_obj)
-        if price <= 0 or isnan(price):
-            raise ValueError("Price must be positive")
-
-        if ticker in self.positions:
-            _ticker_pos = self.positions[ticker]
-            _ticker_pos[-2] = date_obj
-            _ticker_pos[-1] = price
 
         self.save_positions(date_obj)
 
@@ -337,14 +324,31 @@ class Portfolio:
         return ticker in self.positions
 
     def __repr__(self):
-        print("---- PORTFOLIO ----")
-        print(f"Total Value: {self.current_value():.2f}")
-        print(f"Cash: {self.cash:.2f}")
-        print(f"Positions Value: {self.get_open_positions()['positions_total']:.2f}")
-        print(f"Total fees Paid: {self.total_fees_paid:.2f}")
-        print(f"Return: {((self.current_value() / self.starting_capital - 1) * 100):.2f}%")
-        pprint(self.positions)
-        return f"Last Date: {self.max_date}"
+        """Concise, unambiguous representation (e.g. for debugging containers)."""
+        return (
+            f"Portfolio(cash={self.cash:,.2f}, "
+            f"positions={len(self.positions)}, "
+            f"max_date={self.max_date})"
+        )
+
+    def __str__(self):
+        """Human-readable summary, printed by str() and print()."""
+        current_val = self.current_value()
+        positions_val = current_val - self.cash
+        ret_pct = (current_val / self.starting_capital - 1) * 100
+
+        lines = [
+            "---- PORTFOLIO ----",
+            f"Total Value:       {current_val:>12,.2f}",
+            f"Cash:              {self.cash:>12,.2f}",
+            f"Positions Value:   {positions_val:>12,.2f}",
+            f"Total Fees Paid:   {self.total_fees_paid:>12,.2f}",
+            f"Return:            {ret_pct:>11.2f}%",
+            f"Last Date:         {self.max_date}",
+            f"Positions:         {list(self.positions.keys())}",
+        ]
+        return "\n".join(lines)
+
 
     def equity_line(self):
         """Generate equity line data."""
@@ -376,7 +380,7 @@ class Portfolio:
         dates, capital_line = self.equity_line()
         drawdown = utils.get_drawdown(np.array(capital_line))
         drawdown_val = drawdown["max_dd"]
-        pf_return = pct_diff(self.starting_capital, self.current_value())
+        pf_return = utils.pct_diff(self.starting_capital, self.current_value())
         return pf_return, drawdown_val
 
 

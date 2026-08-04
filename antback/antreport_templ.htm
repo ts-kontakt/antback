@@ -26,6 +26,7 @@
     body {
         margin: 0;
         padding: 0;
+        color: #24292f;
         font-size: 0.875rem;
         line-height: 1.4;
         font-family: "Helvetica Neue", Arial, sans-serif;
@@ -34,8 +35,15 @@
         text-rendering: optimizeLegibility;
     }
 
-    h3 { font-weight: 600; }
-    h4 { font-weight: 600; margin-left:1em;}
+    h3, h4 {
+        font-weight: 600;
+        color: #24292f;
+        margin: 1.5rem 0 0.75rem 0;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #d1d5da;
+        font-size: 1rem;
+        line-height: 1.25;
+    }
 
     /* ===== TABLE STYLES ===== */
     /* IMPORTANT: the :not(.dataTable) guard is required.
@@ -47,19 +55,35 @@
         font-size: 10pt;
     }
 
-    .pure-table td,
-    .pure-table th {
-        color: black;
-        padding: 0.3em 0.9em;
-        text-align: left;
+    /* Remove Pure's dark thead and vertical borders */
+    .pure-table thead,
+    .pure-table thead tr,
+    .pure-table thead th,
+    .pure-table-right thead,
+    .pure-table-right thead tr,
+    .pure-table-right thead th {
+        background-color: transparent;
+        color: #24292f;
+        font-weight: 600;
+        border-left: none;
+        border-bottom: 2px solid #d1d5da;
     }
 
+    .pure-table td,
+    .pure-table th,
     .pure-table-right td,
     .pure-table-right th {
-        color: black;
-        padding: 0.3em 0.9em;
-        text-align: right;
+        color: #24292f;
+        border-left: none;
+        border-bottom: 1px solid #e1e4e8;
+        padding: 0.4em 0.8em;
     }
+
+    .pure-table td,
+    .pure-table th { text-align: left; }
+
+    .pure-table-right td,
+    .pure-table-right th { text-align: right; }
 
     /* ===== DATATABLES STYLES ===== */
     table.dataTable tbody td {
@@ -122,18 +146,18 @@
     /* ===== CARD COMPONENTS ===== */
     .card {
         background: white;
-        border: 0px solid #ddd;
-        overflow: auto;          /* scroll only when needed */
+        border: none;
+        overflow: auto;
     }
 
     .card h3 {
-        color: #333;
-        margin: 0 0 10px 0;
-        font-size: 1em;
+        color: #24292f;
+        margin: 0 0 0.75rem 0;
+        font-size: 1rem;
         font-weight: 600;
-        text-align: center;
-        padding-bottom: 8px;
-        border-bottom: 1px solid #ddd;
+        text-align: left;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #d1d5da;
     }
 
     /* ===== STATS + CHART FLEX ROW ===== */
@@ -184,18 +208,18 @@
     .chart-container {
         width: 100%;
         height: 100%;
-        min-height: 320px;       /* gives Plotly a sane size on init */
+        min-height: 320px;
         background: white;
-        border: 1px solid #ddd;
+        border: 1px solid #ccc;
     }
 
     .trades-table-container {
         display: flow-root;
         background: white;
-        border-left: 1px solid #ddd;
+        border: none;          /* remove left border divider */
         padding-top: 0;
-        width: fit-content;    /* Shrink-wrap to table content */
-        max-width: 100%;       /* Prevent horizontal overflow on small screens */
+        width: fit-content;
+        max-width: 100%;
     }
 
 /* DataTables 2.x wrapper sizing */
@@ -206,8 +230,8 @@ div.dt-container {
 }
 
     /* ===== UTILITY CLASSES ===== */
-    .negative { color: rgb(238, 0, 0); font-weight: 600; }
-    .positive { color: rgb(17, 102, 17); font-weight: 600; }
+    .negative { color: #cf222e; font-weight: 600; }
+    .positive { color: #1a7f37; font-weight: 600; }
 
     /* ===== BUTTON STYLES ===== */
     .custom_btn {
@@ -242,14 +266,27 @@ div.dt-container {
 
     /* ===== DATATABLES SEARCH INPUT ===== */
     .dt-input {
-        border-radius: 6px;
-        transition: all 0.2s ease-in-out;
+        border: 1px solid #d1d5da;
+        border-radius: 0;
+        padding: 0.25rem 0.4rem;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        background-color: #fff;
+        color: #24292f;
+        outline: none;
+        transition: none;
     }
 
+    .dt-input:focus {
+        border-color: #0969da;
+        box-shadow: inset 0 0 0 1px #0969da;
+    }
+
+    /* Remove the gimmicky "filled while typing" look */
     input.dt-input:not(:placeholder-shown) {
-        background-color: #e0f0ff !important;
-        border-color: #66b2ff !important;
-        font-weight: bold;
+        background-color: #fff !important;
+        border-color: #d1d5da !important;
+        font-weight: normal !important;
     }
 
     input[type="search"]::-webkit-search-cancel-button {
@@ -281,16 +318,18 @@ div.dt-container {
     }
 
     .returns-section {
-        display: inline-block;
+        display: block;
+        width: fit-content;
         margin-bottom: 1rem;
         max-width: 100%;
         overflow-x: auto;
-}
+    }
 
     #pd_datatab_wrapper {
         clear: both;
-        margin-top: 2rem;
+        margin-top: 0.5rem;
     }
+    
 
     </style>
 </head>
@@ -599,6 +638,7 @@ div.dt-container {
             /*tab_data]*/
             ;
 
+
             const columns =
                 /*[tab_columns*/
             [{"title":"ticker","orderable":true,"columnControl":["order",["title","searchList"]]},{"title":"open date","orderable":true,"searchable":true,"columnControl":["order",["title","search"]]},{"title":"close date","orderable":true,"searchable":true,"columnControl":["order",["title","search"]]},{"title":"buy price","orderable":true,"searchable":true,"columnControl":["order",["title","search"]]},{"title":"sell price","orderable":true,"searchable":true,"columnControl":["order",["title","search"]]},{"title":"quantity","orderable":true,"searchable":true,"columnControl":["order",["title","search"]]},{"title":"position size","orderable":true,"searchable":true,"columnControl":["order",["title","search"]]},{"title":"net profit","orderable":true,"searchable":true,"columnControl":["order",["title","search"]],"render":render_num,"type":"num-html"},{"title":"profit pct","orderable":true,"searchable":true,"columnControl":["order",["title","search"]],"render":render_num,"type":"num-html"},{"title":"gross profit","orderable":true,"searchable":true,"columnControl":["order",["title","search"]],"render":render_num,"type":"num-html"},{"title":"buy fees","orderable":true,"searchable":true,"columnControl":["order",["title","search"]]},{"title":"sell fees","orderable":true,"searchable":true,"columnControl":["order",["title","search"]]},{"title":"total fees","orderable":true,"searchable":true,"columnControl":["order",["title","search"]]},{"title":"log msg","orderable":true,"searchable":true,"columnControl":["order",["title","search"]]}]
@@ -660,7 +700,7 @@ div.dt-container {
             };
 
             const custom_config_opts = /*[js_opts*/
-            {"paging": true, "pageLength": 50}
+            {"paging": true, "pageLength": 10}
             /*js_opts]*/ ;
             const _PAGING_WARN_LIMIT = /*[paging_warn_limit*/ 500 /*paging_warn_limit]*/ ;
 
@@ -832,8 +872,8 @@ div.dt-container {
                     y: 0.95,
 
                     font: {
-                        size: 12,
-                        color: "#333",
+                        size: 13,
+                        color: "#24292f",
                     },
                 },
 
@@ -884,8 +924,8 @@ div.dt-container {
                 },
                 font: {
                     family: "Segoe UI, Tahoma, Geneva, Verdana, sans-serif",
-                    size: 11,
-                    color: "#333",
+                        size: 12,
+                        color: "#24292f",
                 },
                 showlegend: false,
                 legend: {

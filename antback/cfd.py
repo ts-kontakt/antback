@@ -139,7 +139,7 @@ class CFDAccount:
             margin_requirement: Required margin as fraction (0.1 = 10%)
             leverage: Maximum leverage ratio
             fees: Fee rate (default 0.00015 = 1.5 bps)
-            margin_call_level: Margin call triggered when equity falls below 
+            margin_call_level: Margin call triggered when equity falls below
                 this * current required margin (marked to market)
         """
         self.warn = warn
@@ -167,7 +167,9 @@ class CFDAccount:
     def _validate_and_update_date(self, date_obj):
         """Validate date format and update max_date."""
         if not isinstance(date_obj, (date, datetime)):
-            raise ValueError("'date' or 'datetime' allowed. Try convert using pandas.to_datetime")
+            raise ValueError(
+                "'date' or 'datetime' allowed. Try convert using pandas.to_datetime"
+            )
 
         if self.max_date and date_obj < self.max_date:
             print(f"! Received date: {date_obj}, self.max_date: {self.max_date}")
@@ -243,8 +245,10 @@ class CFDAccount:
 
         # Ruined-account guard: no new positions once equity is exhausted
         if self.current_value() <= 0:
-            msg = (f"Account liquidated: equity {self.current_value():.2f} <= 0, "
-                   f"refusing {position_type} {ticker}")
+            msg = (
+                f"Account liquidated: equity {self.current_value():.2f} <= 0, "
+                f"refusing {position_type} {ticker}"
+            )
             self.events[date_obj].append(msg)
             if self.warn:
                 print(msg)
@@ -259,7 +263,9 @@ class CFDAccount:
         ) * 0.99999
 
         if fixed_val:
-            assert fixed_val >= self.MIN_AMOUNT, f"fixed_val amount must be >= {self.MIN_AMOUNT}"
+            assert fixed_val >= self.MIN_AMOUNT, (
+                f"fixed_val amount must be >= {self.MIN_AMOUNT}"
+            )
             if fixed_val > max_affordable_pos:
                 msg = (
                     f"Insufficient margin: fixed_val {fixed_val:.2f} exceeds affordable "
@@ -311,8 +317,7 @@ class CFDAccount:
 
         if self.warn:
             message = (
-                f"Opened {position_type} position: {quantity:.4f} {ticker} "
-                f"at {price:.2f}"
+                f"Opened {position_type} position: {quantity:.4f} {ticker} at {price:.2f}"
             )
             print(message)
             message = (
@@ -386,8 +391,7 @@ class CFDAccount:
 
         if self.warn:
             message = (
-                f"Closed {position_type} position: {quantity:.4f} {ticker} "
-                f"at {price:.2f}"
+                f"Closed {position_type} position: {quantity:.4f} {ticker} at {price:.2f}"
             )
             print(message)
             print(f"Gross P&L: {gross_pnl:.2f}, Net P&L: {net_pnl:.2f}")
@@ -498,13 +502,11 @@ class CFDAccount:
 
         if self.warn and self.position:
             message = (
-                f"Total Cash: {self.cash:.2f}, "
-                f"Blocked Margin: {self.blocked_margin:.2f}"
+                f"Total Cash: {self.cash:.2f}, Blocked Margin: {self.blocked_margin:.2f}"
             )
             print(message)
             message = (
-                f"Unrealized P&L: {unrealized_pnl:.2f}, "
-                f"Total Equity: {total_equity:.2f}"
+                f"Unrealized P&L: {unrealized_pnl:.2f}, Total Equity: {total_equity:.2f}"
             )
             print(message)
 
@@ -563,9 +565,7 @@ class CFDAccount:
             # Margin call check
             is_margin_call, equity, threshold = self.check_margin_call()
             if is_margin_call:
-                print(
-                    f"!  MARGIN CALL: Equity {equity:.2f} < Threshold {threshold:.2f}"
-                )
+                print(f"!  MARGIN CALL: Equity {equity:.2f} < Threshold {threshold:.2f}")
         else:
             print("Position: None")
 
@@ -664,7 +664,9 @@ class CFDAccount:
 
         reconciled = self.starting_capital + net_trading_profit + open_positions_profit
         if abs(reconciled - current_total) > 0.01:
-            print(f"WARNING: reconciliation mismatch: {reconciled:.2f} vs {current_total:.2f}")
+            print(
+                f"WARNING: reconciliation mismatch: {reconciled:.2f} vs {current_total:.2f}"
+            )
             return False
 
         if self.warn:
@@ -685,9 +687,7 @@ class CFDAccount:
     def stats_trades(self):
         return utils.analyze_trades(self.get_tradelist(), show=False)
 
-    def full_report(
-        self, kind="html", outfile="report.html", title="CFDAccount report"
-    ):
+    def full_report(self, kind="html", outfile="report.html", title="CFDAccount report"):
         if kind == "excel":
             return utils.excel_report(self, title=title)
         return utils.html_report(self, outfile=outfile, title=title)
@@ -797,7 +797,6 @@ def gen_equity(portfolio, show=False):
             else:
                 print(f"{date}: No position, capital={cap:.2f}")
 
-    # FIXED: Convert events dict to local copy (does not permanently mutate portfolio state)
     events = dict(portfolio.events)
 
     # Create DataFrame with CFD-specific columns
@@ -847,9 +846,7 @@ def gen_equity(portfolio, show=False):
 
     if show:
         print("\n=== CFD/FX Equity Line ===")
-        print(
-            ndf[["capital", "available_cash", "blocked_margin", "positions"]].head(10)
-        )
+        print(ndf[["capital", "available_cash", "blocked_margin", "positions"]].head(10))
         print(f"Total rows: {len(ndf)}")
 
         # Show capital changes
@@ -1080,14 +1077,14 @@ def comprehensive_test():
 
 def test_negative():
     acc = CFDAccount(cash=10000, leverage=10, warn=True)
-    acc.process('long', 'XYZ', pd.to_datetime("2024-01-04"), 100.0)
-    acc.process(None, 'XYZ', pd.to_datetime("2024-01-06"), 5.0)      # -95% gap
+    acc.process("long", "XYZ", pd.to_datetime("2024-01-04"), 100.0)
+    acc.process(None, "XYZ", pd.to_datetime("2024-01-06"), 5.0)  # -95% gap
     # Gap-through liquidation: equity floored at zero, shortfall recorded
-    assert acc.position is None                     # force-closed by margin call
-    assert acc.current_value() == 0.0               # was -85,014.05 before fix
+    assert acc.position is None  # force-closed by margin call
+    assert acc.current_value() == 0.0  # was -85,014.05 before fix
     assert acc.liquidation_shortfall > 0
     # ruined account refuses new positions instead of trading on negative cash
-    assert acc.process('long', 'XYZ', pd.to_datetime("2024-01-07"), 6.0) is None
+    assert acc.process("long", "XYZ", pd.to_datetime("2024-01-07"), 6.0) is None
     print(acc.events)
 
 
