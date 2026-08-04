@@ -2,7 +2,7 @@ import gc
 import time
 import numpy as np
 from talipp.indicators import SMA
-import antback2 as ab
+import antback as ab
 
 
 def bench(func, *args, repeats=15, warmup=3, **kwargs):
