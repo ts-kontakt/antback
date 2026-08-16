@@ -58,7 +58,8 @@ def get_aggregation_function(window_size):
     rolling_data = ab.NamedRollingLists(window_size)
 
     def aggregate(day, open_price, high_price, low_price, close_price):
-        if all((high_price, low_price, close_price)):
+        if not (pd.isna(open_price) or pd.isna(high_price)
+                or pd.isna(low_price) or pd.isna(close_price)):
             rolling_data.append("op", open_price)
             rolling_data.append("cl", close_price)
             rolling_data.append("lo", low_price)
@@ -411,6 +412,8 @@ def main():
     # Initialize price data
     import yfinance as yf
     price_data = yf.Ticker(TICKER_SYMBOL).history(period="10y")
+    price_data = price_data[price_data['Close'] > 0].dropna()
+    assert not price_data.empty, "DataFrame is empty !"
     
     # Split data into training and test sets
     training_data = price_data.iloc[:-TEST_PERIOD_DAYS].tail(TEST_PERIOD_DAYS * TRAINING_MULTIPLIER)
@@ -428,24 +431,24 @@ def main():
     # model_name = "Random Forest"
     
     # 3. LightGBM Classifier
-    try:
-        from lightgbm import LGBMClassifier
-        prediction_model = LGBMClassifier(random_state=42, verbose=-1)
-        model_name = "LightGBM"
-    except ImportError:
-        print("LightGBM not installed. Install with: pip install lightgbm")
-        prediction_model = DecisionTreeClassifier(random_state=42)
-        model_name = "Decision Tree (fallback)"
-    
-    # 4. XGBoost Classifier
     # try:
-        # from xgboost import XGBClassifier
-        # prediction_model = XGBClassifier(random_state=42, eval_metric='logloss')
-        # model_name = "XGBoost"
+        # from lightgbm import LGBMClassifier
+        # prediction_model = LGBMClassifier(random_state=42, verbose=-1)
+        # model_name = "LightGBM"
     # except ImportError:
-        # print("XGBoost not installed. Install with: pip install xgboost")
+        # print("LightGBM not installed. Install with: pip install lightgbm")
         # prediction_model = DecisionTreeClassifier(random_state=42)
         # model_name = "Decision Tree (fallback)"
+    
+    # 4. XGBoost Classifier
+    try:
+        from xgboost import XGBClassifier
+        prediction_model = XGBClassifier(random_state=42, eval_metric='logloss')
+        model_name = "XGBoost"
+    except ImportError:
+        print("XGBoost not installed. Install with: pip install xgboost")
+        prediction_model = DecisionTreeClassifier(random_state=42)
+        model_name = "Decision Tree (fallback)"
     
     # =====================================
     

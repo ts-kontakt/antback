@@ -137,6 +137,8 @@ def main():
     # Create a Ticker object for the specified symbol.
     ticker_object = yf.Ticker(ticker_symbol)
     stock_data_df = ticker_object.history(period=data_period)
+    stock_data_df = stock_data_df[stock_data_df['Close'] > 0]
+    assert not stock_data_df.empty, "DataFrame is empty !"
 
     # Define a helper function to apply the ATR calculator to each row of the DataFrame.
     def calculate_atr_stop_for_row(row):

@@ -43,6 +43,8 @@ def main():
 
     TICKER = "QQQ"  # Nasdaq-100 ETF
     price_data = yf.Ticker(TICKER).history(period="10y")
+    price_data = price_data[price_data['Close'] > 0]
+    assert not price_data.empty, "DataFrame is empty !"
 
     # Run the strategy on closing prices
     turn_of_the_month_strategy(price_data["Close"], TICKER)

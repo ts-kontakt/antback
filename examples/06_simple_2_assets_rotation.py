@@ -26,7 +26,8 @@ def get_price_data(primary_ticker, alternative_ticker, years_back=10):
     start_date = end_date - timedelta(days=years_back * 365)
 
     price_data = yf.download(tickers, start=start_date, end=end_date)["Close"]
-    # price_data = price_data.fillna(method='ffill')
+    price_data = price_data[(price_data > 0).all(axis=1)]
+    assert not price_data.empty, "DataFrame is empty !"
     return price_data
 
 
@@ -101,6 +102,7 @@ def main():
 
     # Fetch historical data and run backtest
     price_data = get_price_data(primary_ticker, alternative_ticker, years_back=20)
+
     backtest_results = run_backtest(
         price_data,
         primary_ticker,

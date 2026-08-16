@@ -5,7 +5,7 @@ import yfinance as yf
 import antback as ab
 
 
-def fetch_price_history(tickers, years_back=10):
+def fetch_price_history(tickers, years_back=20):
     """
     Fetch historical daily closing prices for the given assets.
 
@@ -25,6 +25,8 @@ def fetch_price_history(tickers, years_back=10):
     start_date = end_date - timedelta(days=years_back * 365)
 
     price_history = yf.download(tickers, start=start_date, end=end_date)["Close"]
+    price_history = price_history[(price_history > 0).all(axis=1)]
+    assert not price_history.empty, "DataFrame is empty !"
     return price_history
 
 
@@ -60,7 +62,7 @@ def run_backtest(price_history, tickers, rolling_months=10):
     transaction_fee = 0.0015 / 2  
 
     portfolio = ab.Portfolio(
-        cash=100_000,
+        cash=200_000,
         single=False,
         fees=transaction_fee,
         allow_fractional=False
@@ -135,10 +137,11 @@ def main():
     tickers = ['SPY', 'GLD', 'TLT']
 
     # Optional: Uncomment to include Bitcoin
+    # tickers.append('SLV')
     # tickers.append('BTC-USD')
 
     # Fetch data and execute backtest
-    price_history = fetch_price_history(tickers, years_back=10)
+    price_history = fetch_price_history(tickers, years_back=20)
     print(price_history)
 
     backtest_results = run_backtest(price_history, tickers, ROLLING_AVG_MONTHS)

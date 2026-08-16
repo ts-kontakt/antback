@@ -40,6 +40,8 @@ def main():
 
     symbol = "QQQ"
     data = yf.Ticker(symbol).history(period="10y")
+    data = data[data['Close'] > 0]
+    assert not data.empty, "DataFrame is empty !"
     test_simple_sma(data.Close, symbol)
 
 

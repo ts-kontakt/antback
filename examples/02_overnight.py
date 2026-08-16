@@ -38,7 +38,7 @@ def overnight_strategy(df, ticker: str, entry_day: int, hold_days: int = 1):
         date, open_price, high, low, close_price = row[:5]
         signal = None
 
-        # Exit trade if the holding period is over
+        # Exit trade if the holding period is over (returns False if called < hold_days)
         if sell_timer(bar=date):
             signal = "sell"
 
@@ -62,7 +62,11 @@ def main():
 
     ticker = "QQQ"  # Nasdaq-100 ETF
     price_data = yf.Ticker(ticker).history(period="10y")
-
+    price_data = price_data[(price_data['Close'] > 0) & (price_data['Open'] > 0)]
+    assert not price_data.empty, "DataFrame is empty !"
+    
+    ##[0, 1, 2, 3, 4], "entry_day must be between 0 (Mon) and 4 (Fri)."
+    
     ## Example: Buy Monday close → Sell Tuesday open (1-day hold)
     overnight_strategy(price_data, ticker, entry_day=0, hold_days=1)
 

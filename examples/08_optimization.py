@@ -40,6 +40,8 @@ if __name__ == "__main__":
     
     # Load data
     data = yf.Ticker(symbol).history(period='10y')
+    data = data[data['Close'] > 0]
+    assert not data.empty, "DataFrame is empty !"
     close_prices = data['Close']
     def optimize_strategy(params):
         """Run backtest with given parameters and return results."""

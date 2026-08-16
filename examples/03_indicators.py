@@ -38,6 +38,8 @@ def main():
 
     symbol = "QQQ"
     data = yf.Ticker(symbol).history(period="5y")["Close"]
+    data = data[data > 0]
+    assert not data.empty, "DataFrame is empty !"
     test_sma_crossover(data, symbol)
 
 

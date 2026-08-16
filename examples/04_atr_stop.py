@@ -4,14 +4,13 @@ import antback as ab
 
 def test_atr_strategy(data, symbol, fast=10, slow=30, atr_period=14, atr_mult=3):
     """Backtest ATR stop strategy with MA crossovers."""
-    port = ab.Portfolio(10_000, single=True)
+    port = ab.Portfolio(10_000, single=True, warn=True)
     prices = ab.RollingList(50)  # Stores enough prices for MA calculations
     cross = ab.new_cross_func()
     atr_stop = ab.new_atr_stop_func(n=atr_period, atr_multiplier=atr_mult)
 
     for row in data.itertuples():
         date, _, high, low, close = row[:5]  # Unpack OHLC data
-        
         prices.append(close)
         price_hist = prices.values()
         # Calculate ATR stop levels
@@ -42,7 +41,10 @@ def test_atr_strategy(data, symbol, fast=10, slow=30, atr_period=14, atr_mult=3)
 
 def main():
     symbol = "QQQ"
-    data = yf.Ticker(symbol).history(period='10y')
+    data = yf.Ticker(symbol).history(period='30y')
+    data = data[data['Close'] > 0]
+    assert not data.empty, "DataFrame is empty !"
+
     test_atr_strategy(data, symbol, atr_period=8, atr_mult=4)
 
 if __name__ == "__main__":

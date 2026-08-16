@@ -94,5 +94,7 @@ if __name__ == "__main__":
 
     TICKER = "QQQ"  # Nasdaq-100 ETF
     price_data = yf.Ticker(TICKER).history(period='10y')[['Open', 'Close']]
+    price_data = price_data[(price_data['Close'] > 0) & (price_data['Open'] > 0)]
+    assert not price_data.empty, "DataFrame is empty !"
 
     test_holiday_effect(price_data, TICKER)

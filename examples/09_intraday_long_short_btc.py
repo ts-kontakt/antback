@@ -69,6 +69,7 @@ def run_backtest():
 
     # Resample to 15-minute intervals
     resampled = df['close'].resample('15min').ohlc()
+    resampled = resampled[resampled['close'] > 0]
     price_data = tuple(zip(resampled.index, resampled.close))
 
     

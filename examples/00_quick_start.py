@@ -6,6 +6,8 @@ fast_period, slow_period = 10, 30
 
 # Download historical data
 data = yf.Ticker(symbol).history(period="10y")
+data = data[data['Close'] > 0]
+assert not data.empty, "DataFrame is empty !"
 
 port = ab.Portfolio(10_000, single=True)
 
@@ -17,15 +19,15 @@ cross = ab.new_cross_func()
 
 # Main trading loop - iterate through historical prices
 for date, price in data["Close"].items():
-    # Add current price to rolling list
+
     prices.append(price)
     price_history = prices.values()
     signal = "update" # Default signal: just update portfolio position with current price
     
     # Only calculate moving averages once we have enough data
-    if len(price_history) >= slow_period:
+    if len(price_history) == slow_period:
         
-        # Calculate  moving averages
+        # moving averages using built-in functions only
         fast_ma = sum(price_history[-fast_period:]) / fast_period
         # No need for slicing since price_history maxlen equals slow_period
         slow_ma = sum(price_history) / slow_period
@@ -46,6 +48,7 @@ port.basic_report(show=True)
 
 # Generate detailed HTML report
 port.full_report(outfile=f"Portfolio_report.html", title=f"SMA Crossover on {symbol}")
+
 
 # Generate detailed Excel report
 port.full_report(
