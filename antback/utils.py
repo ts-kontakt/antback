@@ -14,9 +14,49 @@ try:
 except ImportError:
     from comnt import write_from_template
 
+__all__ = [
+    "get_drawdown",
+    "pct_diff",
+    "pct_dist",
+    "datetime_to_str",
+    "RollingList",
+    "NamedRollingLists",
+    "PerTickerRollingStore",
+    "RollingArray",
+    "NamedRollingArrays",
+    "PerTickerNamedRollingArrays",
+    "Candle",
+    "new_cross_func_np",
+    "new_cross_func",
+    "new_wait_n_bars",
+    "new_multi_ticker_wait",
+    "get_monthly_points",
+    "get_weekly_points",
+    "new_atr_func",
+    "new_atr_stop_func",
+    "create_multi_atr_func",
+    "create_sma_func",
+    "get_pre_dates_for_targets",
+    "get_orders",
+    "calculate_annual_growth_rate",
+    "summary",
+    "remove_outliers",
+    "calculate_avg_duration",
+    "find_longest_streaks_vectorized",
+    "analyze_trades",
+    "get_year_stats_p",
+    "get_year_stats",
+    "format_spans",
+    "render_year_table",
+    "html_report",
+    "excel_report",
+]
+
 
 def get_drawdown(prices):
     """Vectorized calculation of maximum drawdown for a numpy array of prices."""
+    if len(prices) == 0:
+        return {"max_dd": 0.0, "index": 0, "start": 0}
     assert np.all(prices >= 0), "All prices must be non-negative"
 
     peaks = np.maximum.accumulate(prices)
@@ -108,23 +148,46 @@ class PerTickerRollingStore:
 
 
 class RollingArray:
-    __slots__ = ("_buffer",)
-    """Maintain a fixed-length NumPy array buffer."""
+    """Fixed-length window backed by a numpy array with O(1) amortised append.
 
-    def __init__(self, size):
-        self._buffer = np.zeros(size, dtype=float)
+    values() is a zero-copy, read-only view whose length grows 0..size during
+    warm-up (never zero-padded), so `len(values()) >= N` is a correct readiness
+    test. The buffer is 4x oversized, so compaction happens only once per
+    ~3*size appends and the live window stays one contiguous slice.
+    """
+
+    __slots__ = ("_b", "_size", "_cap", "_pos", "_n")
+
+    def __init__(self, size, dtype=float):
+        if size < 1:
+            raise ValueError("size must be >= 1")
+        self._size = size
+        self._cap = 4 * size
+        self._b = np.zeros(self._cap, dtype=dtype)
+        self._pos = 0
+        self._n = 0
 
     def append(self, value):
-        """Append a value, shifting older values left."""
-        self._buffer[0:-1] = self._buffer[1:]
-        self._buffer[-1] = value
+        if self._pos == self._cap:
+            # End of buffer: move the newest `size` values to the front, then
+            # continue writing after them. Compaction only fires when the
+            # window is already full (it needs >= 4*size appends), so this
+            # never interacts with warm-up.
+            self._b[:self._size] = self._b[self._cap - self._size:]
+            self._pos = self._size
+        self._b[self._pos] = value
+        self._pos += 1
+        if self._n < self._size:
+            self._n += 1
+
+    def __len__(self):
+        return self._n
 
     def values(self):
-        """Return current array values."""
-        return self._buffer
-
-    # def is_filled(self):
-    # return np.count_nonzero(self._buffer) == size
+        """Chronological, zero-copy, read-only view of the current window."""
+        view = self._b[self._pos - self._n:self._pos]
+        view.setflags(write=False)
+        return view
 
 
 class NamedRollingArrays:
@@ -277,7 +340,7 @@ def new_cross_func():
         nonlocal prev_state
         #  Reset state for invalid inputs. The check `val != val` is a
         #    fast, standard way to detect if a value is NaN (Not a Number).
-        if (active != active) or (passive != passive) or passive == 0:
+        if active is None or passive is None or (active != active) or (passive != passive) or passive == 0:
             prev_state = None
             return None
 
@@ -512,36 +575,6 @@ def create_multi_atr_func(atr_period=14, multiplier=3):
     return compute_atr
 
 
-def create_sma_func_p(period):
-    """
-    Creates a universal SMA calculator that gracefully handles None,
-    np.nan, pd.NA, and other missing value representations.
-    """
-    data_window = deque(maxlen=period)
-    current_sum = 0.0
-    last_sma = None
-
-    def calculate_sma(new_value):
-        nonlocal current_sum, last_sma
-
-        if new_value != new_value:  # if math.isnan(new_value):
-            return last_sma
-
-        if len(data_window) == period:
-            oldest_value = data_window[0]
-            current_sum -= oldest_value
-
-        data_window.append(new_value)
-        current_sum += new_value
-
-        if len(data_window) == period:
-            current_sma = current_sum / period
-            last_sma = current_sma
-            return current_sma
-        return None
-
-    return calculate_sma
-
 
 def create_sma_func(period):
     """
@@ -733,15 +766,20 @@ def summary(portfolio, show=False):
     # ── Guard: zero trades ──────────────────────────────────────────────
     if not portfolio.trades:
         print("No trades executed (no closed positions).")
-        if portfolio.positions:
-            print(f"Currently holding: {list(portfolio.positions.keys())}")
+        # Portfolio stores a dict of tickers; CFDAccount holds a single
+        # position list -- support both instead of crashing with AttributeError.
+        open_positions = getattr(portfolio, "positions", None)
+        if open_positions:
+            print(f"Currently holding: {list(open_positions.keys())}")
+        elif getattr(portfolio, "position", None):
+            print(f"Currently holding: {portfolio.position[0]}")
         if show:
             end_equity = portfolio.current_value()
             net_profit_prc = pct_diff(portfolio.starting_capital, end_equity)
             print(f"Starting Capital:  {portfolio.starting_capital:,.2f}")
             print(f"Current Value:    {end_equity:,.2f}")
             print(f"Unrealized P&L:   {net_profit_prc:+.2f}%")
-        return None
+        return []
 
     # ── Normal summary path (unchanged from here down) ──────────────────
     start_date = min(portfolio.pos_history.keys())
@@ -1059,15 +1097,18 @@ def get_year_stats(portfolio):
         .round(2)
     )
 
-    # 4. Process Trade Data (Dynamic Formatting)
-    trade_data = portfolio.get_tradelist()
-
-    # Create a label column based on the determined date format
-    trade_data["period_label"] = trade_data.close_date.apply(
-        lambda x: x.strftime(date_fmt) if pd.notna(x) else None
+    # 4. Net return in currency, from the same equity curve as the % row
+    # (end-of-year capital minus start-of-year capital), so both rows agree
+    # by construction.
+    period_net_returns = (
+        cleaned_equity_data.capital.groupby(pd.Grouper(freq=freq_setting))
+        .apply(
+            lambda group: (
+                group.iloc[-1] - group.iloc[0] if len(group) > 0 else 0.0
+            )
+        )
+        .round(2)
     )
-
-    period_trade_profits = trade_data.groupby("period_label").net_profit.sum().to_dict()
 
     # 5. Combine Data
     period_return_pairs = list(
@@ -1077,14 +1118,14 @@ def get_year_stats(portfolio):
                 for date_index in period_capital_returns.index
             ],
             period_capital_returns.values,
+            period_net_returns.values,
         )
     )
 
     combined_stats = []
-    for date_str, capital_return in period_return_pairs:
-        trade_profit = period_trade_profits.get(date_str, 0)
+    for date_str, capital_return, net_return in period_return_pairs:
         # Retaining the " " from original code, though usually cleaner to remove it
-        combined_stats.append([date_str + " ", capital_return, trade_profit])
+        combined_stats.append([date_str + " ", capital_return, net_return])
 
     # 6. Return Result
     return pd.DataFrame(combined_stats, columns=[col_name, "return", "net_return"])
@@ -1151,6 +1192,8 @@ def html_report(portfolio, outfile="portfolio-report.html", title="Account repor
     # Generate basic metrics
 
     base_stats = portfolio.basic_report(show=False)
+    if not base_stats:
+        base_stats = []
 
     base_stats_fmt = []
     dates_sep = " : "
@@ -1187,18 +1230,17 @@ def html_report(portfolio, outfile="portfolio-report.html", title="Account repor
         "fixedColumns": {"start": 1},
         "scrollX": True,
     }
-    # Generate trades table
-    try:
+    # Generate trades table (single call). df2tables injects its own
+    # current-version DataTables assets via add_scripts=True -- the
+    # template carries no DataTables bundle of its own.
+    if trades_df.empty:
+        trades_table = "<p>No trades executed</p>"
+    else:
         trades_table = df2t.render_inline(
             trades_df,
             format_negatives=["net_profit", "profit_pct", "gross_profit"],
             js_opts=custom_config_opts,
-        )
-    except TypeError:
-        print("Upgrade df2tables to recent version!")
-        trades_table = df2t.render_inline(
-            trades_df,
-            format_negatives=["net_profit", "profit_pct", "gross_profit"],
+            add_scripts=True,
         )
 
     # Template data
@@ -1235,6 +1277,7 @@ def html_report(portfolio, outfile="portfolio-report.html", title="Account repor
 
     write_from_template(template_path, outfile, data)
     open_file(outfile)
+
 
 
 def excel_report(portfolio, outfile="portfolio-report.xlsx", title="Portfolio report"):

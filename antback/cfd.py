@@ -54,6 +54,15 @@ TradeResult = namedtuple(
     ],
 )
 
+__all__ = [
+    "CFDAccount",
+    "TradeData",
+    "TradeResult",
+    "trade_result",
+    "pct_diff",
+    "gen_equity",
+]
+
 
 def trade_result(trade, brokerage, opened=False):
     """Calculate trade results for CFD/FX positions."""
@@ -420,7 +429,11 @@ class CFDAccount:
                 if self.warn:
                     print(f"!  {msg}")
                 self._close(date_obj, price, log_msg="Margin Call")
-            self.save_position(date_obj)
+
+        # Always record the state (heartbeat), even with no position or a
+        # different ticker -- otherwise pos_history has gaps and reports
+        # raise "No position history available" for update-only accounts.
+        self.save_position(date_obj)
 
     def process(self, signal, ticker, date_obj, price, fixed_val=None, log_msg=""):
         """Unified entry-point for any daily signal."""
@@ -662,7 +675,15 @@ class CFDAccount:
                 fees = entry_price * quantity * self.fees
                 open_positions_profit = gross_profit - fees
 
-        reconciled = self.starting_capital + net_trading_profit + open_positions_profit
+        # Liquidation shortfall: a gap-through close can floor cash at 0 while
+        # the trade's unfloored net_profit keeps the full loss -- add the
+        # shortfall back so reconciliation matches the floored equity.
+        reconciled = (
+            self.starting_capital
+            + net_trading_profit
+            + open_positions_profit
+            + self.liquidation_shortfall
+        )
         if abs(reconciled - current_total) > 0.01:
             print(
                 f"WARNING: reconciliation mismatch: {reconciled:.2f} vs {current_total:.2f}"
@@ -797,52 +818,58 @@ def gen_equity(portfolio, show=False):
             else:
                 print(f"{date}: No position, capital={cap:.2f}")
 
-    events = dict(portfolio.events)
+    # One collapse pass over the ticks: last row per calendar day wins and that
+    # day's events concatenate in tick order (str(list) rendering kept).
+    by_day = {}
+    for date_obj, capital, available_cash, blocked_margin, positions_str in equity:
+        try:
+            day = date_obj.date()
+        except AttributeError:  # plain date or string key
+            day = pd.Timestamp(date_obj).date()
+        events_str = (str(portfolio.events[date_obj])
+                      if date_obj in portfolio.events else "")
+        row = by_day.get(day)
+        if row is None:
+            by_day[day] = [capital, available_cash, blocked_margin, positions_str, events_str]
+        else:
+            row[0], row[1], row[2], row[3] = capital, available_cash, blocked_margin, positions_str
+            row[4] += events_str
 
-    # Create DataFrame with CFD-specific columns
-    mdf = pd.DataFrame(
-        equity,
+    # One calendar walk over every day in the span. Only capital carries
+    # forward onto gap days (existing contract: no .ffill() of the row);
+    # available_cash/blocked_margin/positions/events stay NaN there and
+    # date_obj is the calendar day itself.
+    all_days = pd.date_range(min(by_day), max(by_day), freq="D")
+    last_capital = float("nan")
+    rows = []
+    for day in all_days:
+        row = by_day.get(day.date())
+        if row is None:
+            rows.append((day, last_capital, np.nan, np.nan, np.nan, np.nan))
+        else:
+            last_capital = row[0]
+            rows.append((day, last_capital, row[1], row[2], row[3], row[4]))
+
+    ndf = pd.DataFrame(
+        rows,
         columns=[
             "date_obj",
             "capital",
             "available_cash",
             "blocked_margin",
             "positions",
+            "events",
         ],
-    )
-
-    # Add events information leveraging Pandas native vectorization
-    # We map directly on the native datetime objects instead of casting to strings
-    events_series = pd.Series({k: str(v) for k, v in events.items()}, dtype=object)
-    mdf["events"] = mdf["date_obj"].map(events_series).fillna("")
-
-    # Convert to date for grouping
-    mdf["pydate"] = pd.to_datetime(mdf["date_obj"]).dt.date
-
-    # Group by day and take last values
-    gdf = mdf.groupby(["pydate"]).agg(
+        index=all_days,
+    ).astype(
         {
-            "date_obj": "last",
-            "capital": "last",
-            "available_cash": "last",
-            "blocked_margin": "last",
-            "positions": "last",
-            "events": lambda x: "".join(x),
+            "capital": "float64",
+            "available_cash": "float64",
+            "blocked_margin": "float64",
         }
     )
-
-    # Fill missing days
-    all_days = pd.date_range(mdf.pydate.min(), mdf.pydate.max(), freq="D")
-    ndf = gdf.reindex(all_days)  # .ffill()
-    ndf["date_obj"] = ndf.index
-    ndf["capital"] = ndf["capital"].ffill()
     # Convert date_obj back to string format
-    try:
-        ndf["date_obj"] = ndf["date_obj"].map(
-            lambda x: utils.datetime_to_str(x) if pd.notna(x) else x
-        )
-    except (NameError, AttributeError):
-        ndf["date_obj"] = ndf["date_obj"].map(lambda x: str(x) if pd.notna(x) else x)
+    ndf["date_obj"] = ndf["date_obj"].map(utils.datetime_to_str)
 
     if show:
         print("\n=== CFD/FX Equity Line ===")
@@ -876,39 +903,39 @@ def simple_test():
     # Example 1: Long position
     print("--- LONG POSITION EXAMPLE ---")
 
-    portfolio.process("close", "AAPL", "2024-01-01", 120.0)
+    portfolio.process("close", "AAPL", date(2024, 1, 1), 120.0)
 
-    portfolio.process("long", "AAPL", "2024-01-01", 150.0)
+    portfolio.process("long", "AAPL", date(2024, 1, 1), 150.0)
     print(f"After going long AAPL @ $150: ${portfolio.current_value():.2f}")
 
     # portfolio.process("short", "AAPL", "2024-01-01", 151.0)
 
     # Price goes up
-    portfolio.process(None, "AAPL", "2024-01-02", 160.0)
+    portfolio.process(None, "AAPL", date(2024, 1, 2), 160.0)
     print(f"After AAPL rises to $160: ${portfolio.current_value():.2f}")
 
     # Close long position
-    portfolio.process("close", "AAPL", "2024-01-03", 165.0, "@@")
+    portfolio.process("close", "AAPL", date(2024, 1, 3), 165.0, "@@")
     print(f"After closing long @ $165: ${portfolio.current_value():.2f}")
     print()
 
     # Example 2: Short position
     print("--- SHORT POSITION EXAMPLE ---")
     print(portfolio.cash)
-    portfolio.process("short", "TSLA", "2024-01-04", 200.0)
+    portfolio.process("short", "TSLA", date(2024, 1, 4), 200.0)
     print(f"After shorting TSLA @ $200: ${portfolio.current_value():.2f}")
 
     # Price goes down (good for short)
-    portfolio.process(None, "TSLA", "2024-01-05", 180.0)
+    portfolio.process(None, "TSLA", date(2024, 1, 5), 180.0)
     print(f"After TSLA falls to $180: ${portfolio.current_value():.2f}")
 
     # Price goes up (bad for short)
-    portfolio.process(None, "TSLA", "2024-01-06", 190.0)
+    portfolio.process(None, "TSLA", date(2024, 1, 6), 190.0)
     print(f"After TSLA rises to $190: ${portfolio.current_value():.2f}")
     print(portfolio.cash)
     # x
     # Close short position
-    portfolio.process("close", "TSLA", "2024-01-07", 185.0)
+    portfolio.process("close", "TSLA", date(2024, 1, 7), 185.0)
     print(f"After closing short @ $185: ${portfolio.current_value():.2f}")
     print()
 

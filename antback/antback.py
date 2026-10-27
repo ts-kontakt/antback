@@ -33,6 +33,22 @@ NOT_HELD = "not_held"
 
 RejectedOrder = namedtuple("RejectedOrder", ["ticker", "date", "action", "reason"])
 
+__all__ = [
+    "Portfolio",
+    "TradeData",
+    "TradeResult",
+    "trade_result",
+    "gen_equity",
+    "generate_test_data",
+    "demo",
+    "RejectedOrder",
+    "ALREADY_HELD",
+    "ZERO_QUANTITY",
+    "DUST_QUANTITY",
+    "INSUFFICIENT_CASH",
+    "NOT_HELD",
+]
+
 def trade_result(trade, brokerage, opened=False):
     """Calculate trade results including commissions."""
     position_size = trade.buy_price * trade.quantity
@@ -387,53 +403,69 @@ class Portfolio:
 def gen_equity(portfolio, show=False):
     """Generate equity line data."""
 
-    def calculate_eqt_val(portfolio):
-        outlist = []
-        prev_capital = portfolio.starting_capital
-
-        for date_obj in sorted(portfolio.pos_history.keys()):
-            cash, positions = portfolio.pos_history[date_obj]
-            positions_amount = sum(price * qty for _, qty, price in positions)
-            capital = cash + positions_amount
-
-            if prev_capital > 0 and abs(capital - prev_capital) > prev_capital * 0.5:
-                print(f"!Warning: Large capital jump on {date_obj}: {prev_capital} -> {capital}")
-
-            outlist.append(
-                (date_obj, capital, cash, ", ".join(f"({ticker}={price:.1f}*{qty:.1f})"
-                                                    for ticker, qty, price in positions),
-                 ))
-            prev_capital = capital
-
-        return outlist
-
     events_history_diff = set(portfolio.events).difference(portfolio.pos_history)
     if events_history_diff:
         print(f"Warning: {len(events_history_diff)} events not in position history")
 
-    equity = calculate_eqt_val(portfolio)
-    if not equity:
+    pos_history = portfolio.pos_history
+    if not pos_history:
         print("No equity data available")
         return pd.DataFrame()
 
-    mdf = pd.DataFrame(equity, columns=["date_obj", "capital", "cash", "positions"])
+    # One walk over sorted(pos_history): the last row per calendar day wins and
+    # that day's events concatenate in tick order (str(list) rendering kept).
+    # Per tick only the capital is computed -- the jump warning needs it and the
+    # day collapse carries it; the positions string is formatted once per
+    # surviving day below instead of once per tick.
+    by_day = {}
+    events = portfolio.events
+    prev_capital = portfolio.starting_capital
+    for date_obj in sorted(pos_history):
+        cash, positions = pos_history[date_obj]
+        capital = cash + sum(price * qty for _, qty, price in positions)
 
-    # Add events information leveraging Pandas native vectorization
-    events_series = pd.Series({k: str(v) for k, v in portfolio.events.items()}, dtype=object)
-    mdf["events"] = mdf["date_obj"].map(events_series).fillna("")
+        if prev_capital > 0 and abs(capital - prev_capital) > prev_capital * 0.5:
+            print(f"!Warning: Large capital jump on {date_obj}: {prev_capital} -> {capital}")
+        prev_capital = capital
 
-    mdf["pydate"] = pd.to_datetime(mdf["date_obj"]).dt.date
-    gdf = mdf.groupby(["pydate"]).agg({
-        "date_obj": "last",
-        "capital": "last",
-        "cash": "last",
-        "positions": "last",
-        "events": lambda x: "".join(x),
-    })
+        try:
+            day = date_obj.date()
+        except AttributeError:  # plain date or string key
+            day = pd.Timestamp(date_obj).date()
+        has_events = date_obj in events  # membership: never grows the defaultdict
+        row = by_day.get(day)
+        if row is None:
+            by_day[day] = [date_obj, capital, cash, positions,
+                           str(events[date_obj]) if has_events else ""]
+        else:
+            row[0], row[1], row[2], row[3] = date_obj, capital, cash, positions
+            if has_events:
+                row[4] += str(events[date_obj])
 
-    all_days = pd.date_range(mdf.pydate.min(), mdf.pydate.max(), freq="D")
-    ndf = gdf.reindex(all_days).ffill()
-    ndf["date_obj"] = ndf["date_obj"].map(utils.datetime_to_str)
+    # One calendar walk: emit every day in the span, carrying the last known
+    # row forward. date_obj stays stale on gap days on purpose -- two year-stat
+    # tables and both reports read that column. Events are NOT carried: a gap
+    # day gets "" (the old reindex().ffill() copied the previous day's events
+    # here, showing the same trade on consecutive days in the reports).
+    all_days = pd.date_range(min(by_day), max(by_day), freq="D")
+    last = None
+    rows = []
+    for day in all_days:
+        row = by_day.get(day.date())
+        if row is not None:
+            date_obj, capital, cash, positions, events_str = row
+            last = (utils.datetime_to_str(date_obj), capital, cash,
+                    ", ".join(f"({ticker}={price:.1f}*{qty:.1f})"
+                              for ticker, qty, price in positions),
+                    events_str)
+        rows.append((last[0], last[1], last[2], last[3],
+                     last[4] if row is not None else ""))
+
+    ndf = pd.DataFrame(
+        rows,
+        columns=["date_obj", "capital", "cash", "positions", "events"],
+        index=all_days,
+    ).astype({"capital": "float64", "cash": "float64"})
     return ndf
 
 
